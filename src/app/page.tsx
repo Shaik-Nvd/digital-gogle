@@ -2,6 +2,7 @@ import Hero from "@/components/sections/Hero";
 import WorkGrid from "@/components/sections/WorkGrid";
 import Services from "@/components/sections/Services";
 import Process from "@/components/sections/Process";
+import Testimonials from "@/components/sections/Testimonials";
 import Contact from "@/components/sections/Contact";
 import Marquee from "@/components/ui/Marquee";
 
@@ -34,6 +35,7 @@ export default function Home() {
       <Process />
       <WorkGrid />
       <Services />
+      <Testimonials />
       <Marquee items={marqueeItems2} reverse />
       <Contact />
     </>

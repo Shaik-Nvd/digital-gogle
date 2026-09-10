@@ -14,7 +14,7 @@ export default function Contact() {
           transition={{ duration: 0.6 }}
           className="mb-16 text-center"
         >
-          <p className="text-sm font-mono text-accent mb-4">04 / CONTACT</p>
+          <p className="text-sm font-mono text-accent mb-4">05 / CONTACT</p>
           <h2 className="text-5xl md:text-7xl font-bold tracking-tight mb-6">
             Let's build <br />
             <span className="text-muted italic font-light">something great.</span>

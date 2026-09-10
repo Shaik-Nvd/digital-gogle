@@ -2,6 +2,7 @@
 
 import { motion } from "framer-motion";
 import { ArrowUpRight } from "lucide-react";
+import Image from "next/image";
 
 const projects = [
   {
@@ -112,11 +113,12 @@ export default function WorkGrid() {
             >
               <div className="relative w-full aspect-[4/3] rounded-2xl overflow-hidden mb-6 glass-panel border border-glass-border shadow-2xl">
                 {/* Project Cover Image */}
-                <img 
+                <Image 
                   src={(project as any).image || `https://s0.wordpress.com/mshots/v1/${encodeURIComponent(project.url)}?w=800`} 
                   alt={project.title} 
-                  className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover/card:scale-105"
-                  loading="lazy"
+                  fill
+                  sizes="(max-width: 768px) 85vw, (max-width: 1200px) 400px, 500px"
+                  className="object-cover transition-transform duration-700 group-hover/card:scale-105"
                 />
                 <div className="absolute inset-0 bg-black/40 group-hover/card:bg-transparent transition-colors duration-500" />
                 

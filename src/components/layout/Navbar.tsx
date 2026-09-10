@@ -26,8 +26,8 @@ export default function Navbar() {
           <Link href="#process" className="hover:text-accent transition-colors">
             Process
           </Link>
-          <Link href="#contact" className="hover:text-accent transition-colors">
-            Contact
+          <Link href="#testimonials" className="hover:text-accent transition-colors">
+            Testimonials
           </Link>
         </nav>
 
@@ -35,9 +35,9 @@ export default function Navbar() {
           <ThemeToggle />
           <Link
             href="#contact"
-            className="px-5 py-2.5 bg-foreground text-background font-medium text-sm rounded-full hover:bg-accent hover:text-black transition-colors shadow-[0_0_15px_rgba(196,240,66,0)] hover:shadow-[0_0_15px_rgba(196,240,66,0.3)]"
+            className="px-5 py-2.5 bg-foreground text-background font-bold text-sm rounded-full hover:bg-accent hover:text-black transition-colors shadow-[0_0_15px_rgba(196,240,66,0)] hover:shadow-[0_0_15px_rgba(196,240,66,0.3)]"
           >
-            Start a project
+            START A PROJECT
           </Link>
         </div>
 
@@ -55,8 +55,8 @@ export default function Navbar() {
 
       {/* Mobile Nav */}
       {isOpen && (
-        <div className="md:hidden bg-background border-b border-glass-border">
-          <nav className="flex flex-col px-6 py-4 space-y-4 text-lg">
+        <div className="md:hidden bg-background/95 backdrop-blur-xl border-b border-glass-border">
+          <nav className="flex flex-col px-6 py-6 space-y-6 text-lg font-medium">
             <Link href="#work" onClick={() => setIsOpen(false)}>
               Work
             </Link>
@@ -66,15 +66,18 @@ export default function Navbar() {
             <Link href="#process" onClick={() => setIsOpen(false)}>
               Process
             </Link>
+            <Link href="#testimonials" onClick={() => setIsOpen(false)}>
+              Testimonials
+            </Link>
             <Link href="#contact" onClick={() => setIsOpen(false)}>
               Contact
             </Link>
             <Link
               href="#contact"
               onClick={() => setIsOpen(false)}
-              className="text-accent font-bold mt-4"
+              className="mt-4 px-6 py-3 bg-foreground text-background text-center font-bold rounded-full w-full max-w-[200px]"
             >
-              Start a project
+              START A PROJECT
             </Link>
           </nav>
         </div>

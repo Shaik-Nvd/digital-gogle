@@ -45,11 +45,11 @@ export default function Hero() {
             className="text-5xl md:text-7xl font-bold tracking-tight leading-[1.05] mb-6"
           >
             We engineer digital systems <br className="hidden md:block" />
-            <span className="bg-clip-text text-transparent bg-gradient-to-r from-muted to-foreground italic font-light">people remember.</span>
+            <span className="bg-clip-text text-transparent bg-gradient-to-r from-muted to-foreground italic font-light">that dominate your market.</span>
           </motion.h1>
 
           <motion.p variants={itemVariants} className="text-[15px] md:text-lg text-muted mb-10 max-w-xl leading-relaxed">
-            Premium digital experiences built with sharp design, deliberate motion and code that stays fast across real devices and real networks.
+            Stop losing customers to slow, outdated websites. We build premium, high-performance web applications, AI integrations, and mobile solutions engineered to scale your brand and obliterate the competition.
           </motion.p>
 
           <motion.div variants={itemVariants} className="flex flex-col md:flex-row items-center gap-4 w-full">
@@ -57,7 +57,7 @@ export default function Hero() {
               href="#work"
               className="w-full md:w-auto px-8 py-3.5 md:py-4 bg-accent text-black font-bold hover:scale-105 transition-all duration-300 flex items-center justify-center space-x-3 rounded-full shadow-[0_0_20px_rgba(196,240,66,0.3)] hover:shadow-[0_0_30px_rgba(196,240,66,0.5)]"
             >
-              <span>See live work</span>
+              <span>EXPLORE OUR WORK</span>
               <span className="text-xl">↓</span>
             </a>
             <a
