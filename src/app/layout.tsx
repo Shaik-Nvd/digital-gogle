@@ -6,8 +6,10 @@ import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import FixedFooter from "@/components/layout/FixedFooter";
 import CustomCursor from "@/components/ui/CustomCursor";
+import Preloader from "@/components/ui/Preloader";
 import ChatWidget from "@/components/chat/ChatWidget";
 import { Analytics } from "@vercel/analytics/react";
+import { LoadingProvider } from "@/components/providers/LoadingProvider";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -76,14 +78,17 @@ export default function RootLayout({
     <html lang="en" className={`${inter.variable} ${jetbrainsMono.variable} antialiased`} suppressHydrationWarning>
       <body className="bg-background text-foreground min-h-screen flex flex-col selection:bg-accent selection:text-black">
         <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false}>
-          <SmoothScroll>
-            <CustomCursor />
-            <Navbar />
-            <main className="flex-1 flex flex-col pb-14 md:pb-16">{children}</main>
-            <Footer />
-            <FixedFooter />
-            <ChatWidget />
-          </SmoothScroll>
+          <LoadingProvider>
+            <Preloader />
+            <SmoothScroll>
+              <CustomCursor />
+              <Navbar />
+              <main className="flex-1 flex flex-col pb-14 md:pb-16">{children}</main>
+              <Footer />
+              <FixedFooter />
+              <ChatWidget />
+            </SmoothScroll>
+          </LoadingProvider>
         </ThemeProvider>
         <Analytics />
       </body>

@@ -1,24 +1,36 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
+import { useLoading } from "@/components/providers/LoadingProvider";
 
 export default function Hero() {
+  const { isLoading } = useLoading();
+  const [reducedMotion, setReducedMotion] = useState(false);
+
+  useEffect(() => {
+    const mql = window.matchMedia("(prefers-reduced-motion: reduce)");
+    setReducedMotion(mql.matches);
+  }, []);
+
+  // Entrance plays once, right as the preloader dismisses (not before).
+  const shouldAnimate = !isLoading;
   const containerVariants = {
     hidden: { opacity: 0 },
     visible: {
       opacity: 1,
       transition: {
-        staggerChildren: 0.1,
+        staggerChildren: reducedMotion ? 0 : 0.1,
       },
     },
   };
 
   const itemVariants = {
-    hidden: { opacity: 0, y: 20 },
+    hidden: { opacity: 0, y: reducedMotion ? 0 : 20 },
     visible: {
       opacity: 1,
       y: 0,
-      transition: { duration: 0.8, ease: [0.22, 1, 0.36, 1] as const },
+      transition: { duration: reducedMotion ? 0.01 : 0.6, ease: [0.22, 1, 0.36, 1] as const },
     },
   };
 
@@ -37,7 +49,7 @@ export default function Hero() {
         <motion.div
           variants={containerVariants}
           initial="hidden"
-          animate="visible"
+          animate={shouldAnimate ? "visible" : "hidden"}
           className="lg:w-1/2 mb-12 lg:mb-0 w-full"
         >
           <motion.h1
@@ -75,8 +87,12 @@ export default function Hero() {
         {/* Right Side: 3D Lab */}
         <motion.div
           initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 1.2, delay: 0.4, ease: [0.22, 1, 0.36, 1] as const }}
+          animate={shouldAnimate ? { opacity: 1, scale: 1 } : { opacity: 0, scale: 0.9 }}
+          transition={{
+            duration: reducedMotion ? 0.01 : 1,
+            delay: reducedMotion ? 0 : 0.35,
+            ease: [0.22, 1, 0.36, 1] as const,
+          }}
           className="lg:w-1/2 relative h-[350px] md:h-[500px] flex items-center justify-center code-cube-container w-full"
         >
           {/* Energy Rings */}

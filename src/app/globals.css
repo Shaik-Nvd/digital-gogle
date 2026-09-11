@@ -147,3 +147,41 @@ body {
 .code-rail-track.reverse {
   animation-direction: reverse;
 }
+
+/* Preloader glitch / chromatic-aberration reveal */
+.dg-glitch {
+  position: relative;
+  display: inline-block;
+  font-family: var(--font-mono), monospace;
+}
+
+.dg-glitch::before,
+.dg-glitch::after {
+  content: attr(data-text);
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  background: #050607;
+  mix-blend-mode: screen;
+}
+
+.dg-glitch::before {
+  color: #ff3b5c;
+  transform: translate(-2px, 0);
+  animation: glitchSlice 900ms infinite linear alternate-reverse;
+}
+
+.dg-glitch::after {
+  color: #35d0ff;
+  transform: translate(2px, 0);
+  animation: glitchSlice 1100ms infinite linear alternate-reverse;
+}
+
+@keyframes glitchSlice {
+  0% { clip-path: inset(0 0 90% 0); transform: translate(-2px, -1px); }
+  20% { clip-path: inset(10% 0 60% 0); transform: translate(2px, 1px); }
+  40% { clip-path: inset(40% 0 30% 0); transform: translate(-2px, 0); }
+  60% { clip-path: inset(70% 0 5% 0); transform: translate(2px, -1px); }
+  80% { clip-path: inset(20% 0 50% 0); transform: translate(-1px, 1px); }
+  100% { clip-path: inset(0 0 90% 0); transform: translate(2px, 0); }
+}
