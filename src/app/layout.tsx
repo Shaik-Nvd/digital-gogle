@@ -6,7 +6,6 @@ import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import FixedFooter from "@/components/layout/FixedFooter";
 import CustomCursor from "@/components/ui/CustomCursor";
-import Preloader from "@/components/ui/Preloader";
 import ChatWidget from "@/components/chat/ChatWidget";
 import { Analytics } from "@vercel/analytics/react";
 
@@ -78,7 +77,6 @@ export default function RootLayout({
       <body className="bg-background text-foreground min-h-screen flex flex-col selection:bg-accent selection:text-black">
         <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false}>
           <SmoothScroll>
-            <Preloader />
             <CustomCursor />
             <Navbar />
             <main className="flex-1 flex flex-col pb-14 md:pb-16">{children}</main>
