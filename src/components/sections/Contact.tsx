@@ -16,7 +16,7 @@ export default function Contact() {
         >
           <p className="text-sm font-mono text-accent mb-4">05 / CONTACT</p>
           <h2 className="text-5xl md:text-7xl font-bold tracking-tight mb-6">
-            Let's build <br />
+            Let&apos;s build <br />
             <span className="text-muted italic font-light">something great.</span>
           </h2>
         </motion.div>

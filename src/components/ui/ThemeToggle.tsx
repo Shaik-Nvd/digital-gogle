@@ -10,6 +10,7 @@ export function ThemeToggle() {
   const { theme, setTheme } = useTheme();
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- mounted-gate pattern (next-themes docs) to avoid an SSR/CSR hydration mismatch
     setMounted(true);
   }, []);
 
@@ -18,8 +19,8 @@ export function ThemeToggle() {
   }
 
   const options = [
-    { value: "light", icon: <Sun size={18} /> },
-    { value: "dark", icon: <Moon size={18} /> },
+    { value: "light", icon: <Sun size={18} />, label: "Light mode" },
+    { value: "dark", icon: <Moon size={18} />, label: "Dark mode" },
   ];
 
   return (

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Volume2, VolumeX } from "lucide-react";
 import { PillToggle } from "@/components/ui/PillToggle";
@@ -16,8 +16,8 @@ export default function Preloader() {
     if (isSoundOn) {
       try {
         const audio = new Audio('/SoundAnimation.mp3');
-        audio.play().catch((e) => console.error("Audio play failed:", e));
-      } catch (e) {}
+        audio.play().catch((err) => console.error("Audio play failed:", err));
+      } catch {}
     }
 
     // Timeline matches the video pacing
@@ -58,15 +58,15 @@ export default function Preloader() {
                 <span className="text-accent font-bold text-xs">DG</span>
               </div>
               <div className="font-mono text-accent text-[9px] md:text-xs tracking-[0.1em] md:tracking-[0.2em] uppercase opacity-80 leading-relaxed">
-                DIGITAL GOGLE STUDIO <span className="hidden md:inline">// AUTO BUILD</span>
+                DIGITAL GOGLE STUDIO <span className="hidden md:inline">{"// AUTO BUILD"}</span>
               </div>
             </div>
 
             {/* Sound Toggle */}
             <PillToggle
               options={[
-                { value: "on", icon: <Volume2 size={16} /> },
-                { value: "off", icon: <VolumeX size={16} /> }
+                { value: "on", icon: <Volume2 size={16} />, label: "Sound on" },
+                { value: "off", icon: <VolumeX size={16} />, label: "Sound off" }
               ]}
               value={isSoundOn ? "on" : "off"}
               onChange={(val) => setIsSoundOn(val === "on")}
@@ -109,12 +109,12 @@ export default function Preloader() {
                         transition={{ duration: 1.8, ease: "linear" }}
                         className="overflow-hidden space-y-1 md:space-y-2 text-accent/80 mt-2"
                       >
-                        <p>import {'{'} design, code, motion {'}'} from '@naveed/studio';</p>
-                        <p className="hidden md:block">const projects = await Portfolio.mount(['UrlScan', 'Fhoneify', 'Alloy Hub']);</p>
+                        <p>{`import { design, code, motion } from '@naveed/studio';`}</p>
+                        <p className="hidden md:block">{`const projects = await Portfolio.mount(['UrlScan', 'Fhoneify', 'Alloy Hub']);`}</p>
                         <br className="hidden md:block"/>
-                        <p>const experience = new Engine( responsive:true, theme:'dark' );</p>
-                        <p>await experience.compile({'{'} html:true, css:true, javascript:true {'}'});</p>
-                        <p className="mt-2 md:mt-4 text-accent">deploy('digitalgogle.com'); // BUILD READY</p>
+                        <p>{`const experience = new Engine( responsive:true, theme:'dark' );`}</p>
+                        <p>{`await experience.compile({ html:true, css:true, javascript:true });`}</p>
+                        <p className="mt-2 md:mt-4 text-accent">{`deploy('digitalgogle.com');`} {/* BUILD READY */}</p>
                       </motion.div>
                     </motion.div>
                   )}

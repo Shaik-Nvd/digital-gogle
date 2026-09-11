@@ -51,7 +51,7 @@ export default function Testimonials() {
               <div>
                 <Quote className="text-accent mb-6 w-10 h-10 opacity-50" />
                 <p className="text-lg md:text-xl font-medium leading-relaxed mb-8">
-                  "{t.quote}"
+                  &ldquo;{t.quote}&rdquo;
                 </p>
               </div>
               <div>

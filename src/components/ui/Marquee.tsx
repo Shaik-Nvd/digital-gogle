@@ -1,4 +1,3 @@
-import { motion } from "framer-motion";
 import { Plus } from "lucide-react";
 
 interface MarqueeProps {
@@ -16,10 +15,13 @@ export default function Marquee({ items, reverse = false }: MarqueeProps) {
       <div className="absolute inset-0 bg-gradient-to-r from-background via-transparent to-background z-10 pointer-events-none" />
       
       <div
-        className={`flex whitespace-nowrap items-center group-hover:[animation-play-state:paused] ${
-          reverse ? "animate-[marquee-slow_reverse]" : "animate-[marquee]"
-        }`}
-        style={{ animationDuration: "25s", animationTimingFunction: "linear", animationIterationCount: "infinite" }}
+        className="flex whitespace-nowrap items-center animate-[marquee] group-hover:[animation-play-state:paused]"
+        style={{
+          animationDuration: "25s",
+          animationTimingFunction: "linear",
+          animationIterationCount: "infinite",
+          animationDirection: reverse ? "reverse" : "normal",
+        }}
       >
         {displayItems.map((item, index) => (
           <div

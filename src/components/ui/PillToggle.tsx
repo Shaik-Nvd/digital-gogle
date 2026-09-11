@@ -6,6 +6,7 @@ import { useId } from "react";
 interface Option<T> {
   value: T;
   icon: React.ReactNode;
+  label?: string;
 }
 
 interface PillToggleProps<T> {
@@ -26,6 +27,8 @@ export function PillToggle<T extends string | number>({ options, value, onChange
           <button
             key={String(option.value)}
             onClick={() => onChange(option.value)}
+            aria-label={option.label ?? String(option.value)}
+            aria-pressed={isActive}
             className={`relative w-8 h-8 md:w-9 md:h-9 rounded-full flex items-center justify-center transition-colors duration-300 ${isActive ? 'text-background' : 'text-muted hover:text-foreground'}`}
           >
             {isActive && (
