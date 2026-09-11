@@ -52,6 +52,7 @@ export default function Preloader() {
   // Respect reduced-motion: skip straight to a simple fade.
   useEffect(() => {
     const mql = window.matchMedia("(prefers-reduced-motion: reduce)");
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- gates client-only matchMedia read to avoid an SSR/CSR hydration mismatch
     setReducedMotion(mql.matches);
     if (mql.matches) {
       const t = setTimeout(finish, 250);

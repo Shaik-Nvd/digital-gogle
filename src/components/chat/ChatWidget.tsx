@@ -34,6 +34,7 @@ function usePrefersReducedMotion() {
   useEffect(() => {
     if (typeof window === "undefined" || !window.matchMedia) return;
     const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- gates client-only matchMedia read to avoid an SSR/CSR hydration mismatch
     setReduced(mq.matches);
     const handler = (e: MediaQueryListEvent) => setReduced(e.matches);
     mq.addEventListener("change", handler);
@@ -110,6 +111,7 @@ export default function ChatWidget() {
   // Reset the dragged position whenever the panel is closed, so reopening
   // anchors back to the default bottom-right spot (no persistence needed).
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- resets drag position only on the isOpen transition, not every render
     if (!isOpen) setPanelOffset({ x: 0, y: 0 });
   }, [isOpen]);
 

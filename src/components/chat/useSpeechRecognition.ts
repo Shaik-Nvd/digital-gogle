@@ -45,6 +45,7 @@ export function useSpeechRecognition(lang: string) {
   const onFinalRef = useRef<(text: string) => void>(() => {});
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- gates client-only feature detection to avoid an SSR/CSR hydration mismatch
     setIsSupported(getSpeechRecognitionCtor() !== null);
   }, []);
 

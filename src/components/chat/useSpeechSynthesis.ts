@@ -14,6 +14,7 @@ export function useSpeechSynthesis() {
 
   useEffect(() => {
     if (typeof window === "undefined" || !("speechSynthesis" in window)) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- gates client-only feature detection to avoid an SSR/CSR hydration mismatch
     setIsSupported(true);
 
     const synth = window.speechSynthesis;
