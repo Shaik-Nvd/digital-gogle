@@ -1,29 +1,55 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Volume2, VolumeX } from "lucide-react";
 import { PillToggle } from "@/components/ui/PillToggle";
 
+const INTRO_SEEN_KEY = "dg-intro-seen";
+
 export default function Preloader() {
   const [step, setStep] = useState<"init" | "terminal" | "flash" | "converge">("init");
   const [loading, setLoading] = useState(true);
+  const [skipTransition, setSkipTransition] = useState(false);
   const [isSoundOn, setIsSoundOn] = useState(true);
 
+  useEffect(() => {
+    try {
+      if (sessionStorage.getItem(INTRO_SEEN_KEY) === "1") {
+        // eslint-disable-next-line react-hooks/set-state-in-effect -- gates client-only sessionStorage read to avoid an SSR/CSR hydration mismatch
+        setSkipTransition(true);
+        setLoading(false);
+      }
+    } catch {}
+  }, []);
+
+  const markIntroSeen = () => {
+    try {
+      sessionStorage.setItem(INTRO_SEEN_KEY, "1");
+    } catch {}
+  };
+
   const handleStart = () => {
+    markIntroSeen();
     setStep("terminal");
-    
+
     if (isSoundOn) {
       try {
         const audio = new Audio('/SoundAnimation.mp3');
-        audio.play().catch((e) => console.error("Audio play failed:", e));
-      } catch (e) {}
+        audio.play().catch((err) => console.error("Audio play failed:", err));
+      } catch {}
     }
 
     // Timeline matches the video pacing
-    setTimeout(() => setStep("flash"), 2500); 
-    setTimeout(() => setStep("converge"), 2800); 
-    setTimeout(() => setLoading(false), 4500); 
+    setTimeout(() => setStep("flash"), 2500);
+    setTimeout(() => setStep("converge"), 2800);
+    setTimeout(() => setLoading(false), 4500);
+  };
+
+  const handleSkip = () => {
+    markIntroSeen();
+    setSkipTransition(true);
+    setLoading(false);
   };
 
   const scatterItems = [
@@ -41,7 +67,7 @@ export default function Preloader() {
         <motion.div
           className="fixed inset-0 z-[100] flex items-center justify-center bg-[#050505] overflow-hidden"
           exit={{ opacity: 0 }}
-          transition={{ duration: 0.8, ease: "easeInOut" }}
+          transition={{ duration: skipTransition ? 0 : 0.8, ease: "easeInOut" }}
         >
           {/* Immersive 3D Grid Perspective */}
           <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-15 bg-center [transform:rotateX(60deg)_scale(2.5)] origin-bottom" style={{ perspective: "1000px" }} />
@@ -58,19 +84,28 @@ export default function Preloader() {
                 <span className="text-accent font-bold text-xs">DG</span>
               </div>
               <div className="font-mono text-accent text-[9px] md:text-xs tracking-[0.1em] md:tracking-[0.2em] uppercase opacity-80 leading-relaxed">
-                DIGITAL GOGLE STUDIO <span className="hidden md:inline">// AUTO BUILD</span>
+                DIGITAL GOGLE STUDIO <span className="hidden md:inline">{"// AUTO BUILD"}</span>
               </div>
             </div>
 
-            {/* Sound Toggle */}
-            <PillToggle
-              options={[
-                { value: "on", icon: <Volume2 size={16} /> },
-                { value: "off", icon: <VolumeX size={16} /> }
-              ]}
-              value={isSoundOn ? "on" : "off"}
-              onChange={(val) => setIsSoundOn(val === "on")}
-            />
+            {/* Sound Toggle + Skip */}
+            <div className="flex items-center gap-2 md:gap-3">
+              <PillToggle
+                options={[
+                  { value: "on", icon: <Volume2 size={16} />, label: "Sound on" },
+                  { value: "off", icon: <VolumeX size={16} />, label: "Sound off" }
+                ]}
+                value={isSoundOn ? "on" : "off"}
+                onChange={(val) => setIsSoundOn(val === "on")}
+              />
+              <button
+                type="button"
+                onClick={handleSkip}
+                className="font-mono text-[9px] md:text-xs tracking-widest uppercase text-muted/70 hover:text-accent border border-glass-border rounded-full px-3 py-1.5 md:px-4 md:py-2 transition-colors"
+              >
+                Skip
+              </button>
+            </div>
           </motion.div>
 
           {/* Center Terminal Window */}
@@ -109,12 +144,12 @@ export default function Preloader() {
                         transition={{ duration: 1.8, ease: "linear" }}
                         className="overflow-hidden space-y-1 md:space-y-2 text-accent/80 mt-2"
                       >
-                        <p>import {'{'} design, code, motion {'}'} from '@naveed/studio';</p>
-                        <p className="hidden md:block">const projects = await Portfolio.mount(['UrlScan', 'Fhoneify', 'Alloy Hub']);</p>
+                        <p>{`import { design, code, motion } from '@naveed/studio';`}</p>
+                        <p className="hidden md:block">{`const projects = await Portfolio.mount(['UrlScan', 'Fhoneify', 'Alloy Hub']);`}</p>
                         <br className="hidden md:block"/>
-                        <p>const experience = new Engine( responsive:true, theme:'dark' );</p>
-                        <p>await experience.compile({'{'} html:true, css:true, javascript:true {'}'});</p>
-                        <p className="mt-2 md:mt-4 text-accent">deploy('digitalgogle.com'); // BUILD READY</p>
+                        <p>{`const experience = new Engine( responsive:true, theme:'dark' );`}</p>
+                        <p>{`await experience.compile({ html:true, css:true, javascript:true });`}</p>
+                        <p className="mt-2 md:mt-4 text-accent">{`deploy('digitalgogle.com');`} {/* BUILD READY */}</p>
                       </motion.div>
                     </motion.div>
                   )}

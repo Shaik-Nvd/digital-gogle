@@ -133,6 +133,11 @@ body {
   100% { transform: translateX(-50%); }
 }
 
+@keyframes marquee {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
 .code-rail-track {
   display: flex;
   width: max-content;

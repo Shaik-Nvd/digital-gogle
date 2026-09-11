@@ -1,8 +1,9 @@
 "use client";
 
-import { motion } from "framer-motion";
+import { motion, useAnimationFrame, useMotionValue, useReducedMotion } from "framer-motion";
 import { ArrowUpRight } from "lucide-react";
 import Image from "next/image";
+import { useRef, useState } from "react";
 
 const projects = [
   {
@@ -78,9 +79,26 @@ const projects = [
     url: "https://www.victoryacademy.live/",
     image: "/victory-academy.png",
   },
-];
+] satisfies { id: number; title: string; category: string; tagline: string; color: string; url: string; image?: string }[];
+
+const SCROLL_SPEED = 56; // px/second
 
 export default function WorkGrid() {
+  const trackRef = useRef<HTMLDivElement>(null);
+  const x = useMotionValue(0);
+  const [isPaused, setIsPaused] = useState(false);
+  const [imageErrors, setImageErrors] = useState<Record<number, boolean>>({});
+  const prefersReducedMotion = useReducedMotion();
+
+  useAnimationFrame((_, delta) => {
+    if (isPaused || prefersReducedMotion) return;
+    const loopWidth = trackRef.current ? trackRef.current.scrollWidth / 2 : 0;
+    if (!loopWidth) return;
+    let next = x.get() - (SCROLL_SPEED * delta) / 1000;
+    if (next <= -loopWidth) next += loopWidth;
+    x.set(next);
+  });
+
   return (
     <section id="work" className="py-24 md:py-32 relative z-10">
       <div className="container mx-auto px-6 mb-16 md:mb-24">
@@ -97,11 +115,15 @@ export default function WorkGrid() {
         </motion.div>
       </div>
 
-      <div className="relative flex overflow-x-hidden group py-4">
+      <div
+        className="relative flex overflow-x-hidden py-4"
+        onMouseEnter={() => setIsPaused(true)}
+        onMouseLeave={() => setIsPaused(false)}
+      >
         <motion.div
-          animate={{ x: ["0%", "-50%"] }}
-          transition={{ ease: "linear", duration: 30, repeat: Infinity }}
-          className="flex whitespace-nowrap gap-6 md:gap-10 px-4 group-hover:[animation-play-state:paused]"
+          ref={trackRef}
+          style={{ x }}
+          className="flex whitespace-nowrap gap-6 md:gap-10 px-4"
         >
           {[...projects, ...projects].map((project, index) => (
             <motion.a
@@ -109,19 +131,31 @@ export default function WorkGrid() {
               href={project.url}
               target="_blank"
               rel="noopener noreferrer"
-              className="group/card cursor-pointer shrink-0 block w-[85vw] sm:w-[400px] md:w-[500px]"
+              whileHover={{ y: -10 }}
+              whileTap={{ y: -4 }}
+              transition={{ type: "spring", stiffness: 320, damping: 26 }}
+              className="group/card cursor-pointer shrink-0 block w-[85vw] sm:w-[400px] md:w-[500px] rounded-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/60 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
             >
-              <div className="relative w-full aspect-[4/3] rounded-2xl overflow-hidden mb-6 glass-panel border border-glass-border shadow-2xl">
-                {/* Project Cover Image */}
-                <Image 
-                  src={(project as any).image || `https://s0.wordpress.com/mshots/v1/${encodeURIComponent(project.url)}?w=800`} 
-                  alt={project.title} 
-                  fill
-                  sizes="(max-width: 768px) 85vw, (max-width: 1200px) 400px, 500px"
-                  className="object-cover transition-transform duration-700 group-hover/card:scale-105"
-                />
-                <div className="absolute inset-0 bg-black/40 group-hover/card:bg-transparent transition-colors duration-500" />
-                
+              <div className="relative w-full aspect-[4/3] rounded-2xl overflow-hidden mb-6 glass-panel border border-glass-border shadow-2xl transition-[box-shadow,border-color] duration-500 ease-out group-hover/card:border-accent/50 group-hover/card:shadow-[0_28px_70px_-24px_rgba(196,240,66,0.4)]">
+                {/* Project Cover Image (falls back to a gradient tile if the screenshot service fails) */}
+                {imageErrors[project.id] ? (
+                  <div className={`absolute inset-0 bg-gradient-to-br ${project.color} flex items-center justify-center transition-transform duration-700 ease-out group-hover/card:scale-110`}>
+                    <span className="font-mono text-white/60 text-sm md:text-base px-6 text-center">
+                      {project.tagline}
+                    </span>
+                  </div>
+                ) : (
+                  <Image
+                    src={project.image || `https://s0.wordpress.com/mshots/v1/${encodeURIComponent(project.url)}?w=800`}
+                    alt={project.title}
+                    fill
+                    sizes="(max-width: 768px) 85vw, (max-width: 1200px) 400px, 500px"
+                    className="object-cover transition-transform duration-700 ease-out group-hover/card:scale-110"
+                    onError={() => setImageErrors((prev) => ({ ...prev, [project.id]: true }))}
+                  />
+                )}
+                <div className="absolute inset-0 bg-black/40 group-hover/card:bg-black/10 transition-colors duration-500" />
+
                 {/* LIVE Badge */}
                 <div className="absolute top-4 left-4 bg-background/80 backdrop-blur-md px-3 py-1 rounded-full flex items-center space-x-2 border border-glass-border z-10">
                   <span className="w-1.5 h-1.5 rounded-full bg-accent animate-pulse" />
