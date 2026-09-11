@@ -11,7 +11,7 @@ export default function FixedFooter() {
   return (
     <>
       {/* Floating WhatsApp Widget Container */}
-      <div className="fixed bottom-28 right-4 md:right-8 z-50 flex flex-col items-end">
+      <div className="fixed bottom-24 right-4 md:right-8 z-50 flex flex-col items-end">
         {/* Expanded Widget */}
         <AnimatePresence>
           {isWidgetOpen && (
