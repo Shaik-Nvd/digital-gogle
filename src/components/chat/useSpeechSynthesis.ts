@@ -2,6 +2,22 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 
+/** Strips common markdown so TTS doesn't read out literal `**`, `#`, `-`, etc. */
+function stripMarkdownForSpeech(text: string): string {
+  return text
+    .replace(/```[\s\S]*?```/g, "") // fenced code blocks
+    .replace(/`([^`]+)`/g, "$1") // inline code
+    .replace(/^#{1,6}\s+/gm, "") // headings
+    .replace(/\[([^\]]+)\]\([^)]+\)/g, "$1") // [text](url)
+    .replace(/(\*\*|__)(.*?)\1/g, "$2") // bold
+    .replace(/(\*|_)(.*?)\1/g, "$2") // italic
+    .replace(/^\s*[-*+]\s+/gm, "") // bullet markers
+    .replace(/^\s*\d+\.\s+/gm, "") // numbered list markers
+    .replace(/\n{2,}/g, ". ") // paragraph breaks -> pause
+    .replace(/\n/g, " ")
+    .trim();
+}
+
 /**
  * Thin wrapper around window.speechSynthesis (TTS).
  * Handles the async voice list (often empty until `voiceschanged` fires),
@@ -47,7 +63,7 @@ export function useSpeechSynthesis() {
   const speak = useCallback(
     (text: string, langCode: string) => {
       if (typeof window === "undefined" || !("speechSynthesis" in window)) return;
-      const trimmed = text.trim();
+      const trimmed = stripMarkdownForSpeech(text);
       if (!trimmed) return;
 
       const synth = window.speechSynthesis;
