@@ -19,9 +19,39 @@ function stripMarkdownForSpeech(text: string): string {
 }
 
 /**
+ * Scripts where a wrong/default voice doesn't just sound accented — it reads
+ * nonsense, because the phoneme rules don't apply at all. For these, we only
+ * ever speak if a real matching system voice exists; otherwise we stay silent
+ * rather than force a mispronunciation.
+ */
+const NON_LATIN_SCRIPTS: Array<{ test: RegExp; lang: string }> = [
+  { test: /[ऀ-ॿ]/, lang: "hi" }, // Devanagari (Hindi, Marathi)
+  { test: /[ঀ-৿]/, lang: "bn" }, // Bengali
+  { test: /[஀-௿]/, lang: "ta" }, // Tamil
+  { test: /[ఀ-౿]/, lang: "te" }, // Telugu
+  { test: /[ಀ-೿]/, lang: "kn" }, // Kannada
+  { test: /[ഀ-ൿ]/, lang: "ml" }, // Malayalam
+  { test: /[਀-੿]/, lang: "pa" }, // Gurmukhi (Punjabi)
+  { test: /[઀-૿]/, lang: "gu" }, // Gujarati
+  { test: /[؀-ۿ]/, lang: "ur" }, // Arabic script (Urdu)
+  { test: /[Ѐ-ӿ]/, lang: "ru" }, // Cyrillic (Russian)
+];
+
+/** Guesses a language from the reply text itself, used only in "auto" mode. */
+function detectNonLatinLang(text: string): string | null {
+  for (const { test, lang } of NON_LATIN_SCRIPTS) {
+    if (test.test(text)) return lang;
+  }
+  return null;
+}
+
+/**
  * Thin wrapper around window.speechSynthesis (TTS).
  * Handles the async voice list (often empty until `voiceschanged` fires),
  * picks the closest voice for a BCP-47 language code, and exposes speak/cancel.
+ * Only ever speaks a language the browser actually has a voice for — it never
+ * forces a script through a mismatched voice, which mangles the pronunciation
+ * instead of just sounding accented.
  */
 export function useSpeechSynthesis() {
   const [isSupported, setIsSupported] = useState(false);
@@ -70,13 +100,26 @@ export function useSpeechSynthesis() {
       // Barge-in: any new utterance immediately supersedes whatever is playing.
       synth.cancel();
 
+      // Prefer an explicit selection; in "auto" mode, guess from the text's script.
+      const explicitLang = langCode && langCode !== "auto" ? langCode : null;
+      const effectiveLang = explicitLang ?? detectNonLatinLang(trimmed);
+      const isRiskyScript = effectiveLang
+        ? NON_LATIN_SCRIPTS.some((s) => s.lang === effectiveLang.split("-")[0])
+        : false;
+      const voice = effectiveLang ? pickVoice(effectiveLang) : null;
+
+      // Never force a risky script through a voice that can't actually read it —
+      // that produces nonsense, not just an accent. Stay silent instead.
+      if (isRiskyScript && !voice) return;
+
       const utterance = new SpeechSynthesisUtterance(trimmed);
-      const voice = langCode && langCode !== "auto" ? pickVoice(langCode) : null;
       if (voice) {
         utterance.voice = voice;
         utterance.lang = voice.lang;
-      } else if (langCode && langCode !== "auto") {
-        utterance.lang = langCode;
+      } else if (effectiveLang) {
+        // Latin-script language (e.g. Spanish/French) with no exact voice match —
+        // still hint the OS speech engine via `lang`, which usually reads it fine.
+        utterance.lang = effectiveLang;
       }
 
       utterance.onstart = () => setIsSpeaking(true);

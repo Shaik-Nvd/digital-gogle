@@ -13,6 +13,7 @@ import {
   Minus,
   Volume2,
   VolumeX,
+  Languages,
 } from "lucide-react";
 import { motion, useDragControls, type PanInfo } from "framer-motion";
 import { CHAT_LANGUAGES } from "@/lib/chat-languages";
@@ -23,6 +24,9 @@ type Message = {
   id: string;
   role: "user" | "assistant";
   content: string;
+  translation?: string;
+  showTranslation?: boolean;
+  isTranslating?: boolean;
 };
 
 function makeId() {
@@ -87,6 +91,7 @@ export default function ChatWidget() {
   const [requestError, setRequestError] = useState<string | null>(null);
   const [ttsEnabled, setTtsEnabled] = useState(true);
   const [panelOffset, setPanelOffset] = useState({ x: 0, y: 0 });
+  const [streamingId, setStreamingId] = useState<string | null>(null);
 
   const listRef = useRef<HTMLDivElement>(null);
   const abortRef = useRef<AbortController | null>(null);
@@ -128,6 +133,7 @@ export default function ChatWidget() {
     setMessages([...nextMessages, { id: assistantId, role: "assistant", content: "" }]);
     setInput("");
     setIsStreaming(true);
+    setStreamingId(assistantId);
 
     const controller = new AbortController();
     abortRef.current = controller;
@@ -171,7 +177,39 @@ export default function ChatWidget() {
       setMessages((prev) => prev.filter((m) => m.id !== assistantId));
     } finally {
       setIsStreaming(false);
+      setStreamingId(null);
       abortRef.current = null;
+    }
+  }
+
+  async function toggleTranslate(id: string) {
+    const target = messages.find((m) => m.id === id);
+    if (!target || !target.content) return;
+
+    if (target.translation) {
+      setMessages((prev) =>
+        prev.map((m) => (m.id === id ? { ...m, showTranslation: !m.showTranslation } : m))
+      );
+      return;
+    }
+
+    setMessages((prev) => prev.map((m) => (m.id === id ? { ...m, isTranslating: true } : m)));
+
+    try {
+      const res = await fetch("/api/translate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text: target.content }),
+      });
+      if (!res.ok) throw new Error(await res.text().catch(() => "Translation failed"));
+      const { translation } = (await res.json()) as { translation: string };
+      setMessages((prev) =>
+        prev.map((m) =>
+          m.id === id ? { ...m, translation, showTranslation: true, isTranslating: false } : m
+        )
+      );
+    } catch {
+      setMessages((prev) => prev.map((m) => (m.id === id ? { ...m, isTranslating: false } : m)));
     }
   }
 
@@ -331,20 +369,40 @@ export default function ChatWidget() {
                       Type or tap the mic to start — Hindi, Tamil, Spanish, French and more all work.
                     </p>
                   )}
-                  {messages.map((m) => (
-                    <div
-                      key={m.id}
-                      className={`max-w-[85%] rounded-2xl px-3 py-2 text-sm whitespace-pre-wrap ${
-                        m.role === "user"
-                          ? "ml-auto bg-accent text-black"
-                          : "mr-auto bg-glass border border-glass-border text-foreground"
-                      }`}
-                    >
-                      {m.content || (isStreaming && m.role === "assistant" ? (
-                        <Loader2 size={14} className="animate-spin text-muted" />
-                      ) : "")}
-                    </div>
-                  ))}
+                  {messages.map((m) => {
+                    const isThisStreaming = m.id === streamingId;
+                    const displayText = m.showTranslation && m.translation ? m.translation : m.content;
+                    return (
+                      <div key={m.id} className={`max-w-[85%] flex flex-col ${m.role === "user" ? "items-end ml-auto" : "items-start mr-auto"}`}>
+                        <div
+                          className={`rounded-2xl px-3 py-2 text-sm whitespace-pre-wrap ${
+                            m.role === "user"
+                              ? "bg-accent text-black"
+                              : "bg-glass border border-glass-border text-foreground"
+                          }`}
+                        >
+                          {displayText || (isThisStreaming ? <Loader2 size={14} className="animate-spin text-muted" /> : "")}
+                        </div>
+                        {m.content && !isThisStreaming && (
+                          <button
+                            type="button"
+                            onClick={() => toggleTranslate(m.id)}
+                            disabled={m.isTranslating}
+                            title={m.showTranslation ? "Show original text" : "Translate to English"}
+                            aria-label={m.showTranslation ? "Show original text" : "Translate message to English"}
+                            className="mt-1 flex items-center gap-1 px-1 text-[10px] text-muted/40 hover:text-accent transition-colors disabled:opacity-50"
+                          >
+                            {m.isTranslating ? (
+                              <Loader2 size={11} className="animate-spin" />
+                            ) : (
+                              <Languages size={11} />
+                            )}
+                            <span>{m.showTranslation ? "Original" : "Translate"}</span>
+                          </button>
+                        )}
+                      </div>
+                    );
+                  })}
                   {interimTranscript && (
                     <div className="ml-auto max-w-[85%] rounded-2xl px-3 py-2 text-sm italic text-muted border border-dashed border-glass-border">
                       {interimTranscript}
