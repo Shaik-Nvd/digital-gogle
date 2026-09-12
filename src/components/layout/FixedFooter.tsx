@@ -11,7 +11,7 @@ export default function FixedFooter() {
   return (
     <>
       {/* Floating WhatsApp Widget Container */}
-      <div className="fixed bottom-24 right-4 md:right-8 z-50 flex flex-col items-end">
+      <div className="fixed bottom-6 md:bottom-24 right-4 md:right-8 z-50 flex flex-col items-end">
         {/* Expanded Widget */}
         <AnimatePresence>
           {isWidgetOpen && (
@@ -20,7 +20,7 @@ export default function FixedFooter() {
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: 20, scale: 0.95 }}
               transition={{ duration: 0.2 }}
-              className="bg-white rounded-2xl shadow-2xl overflow-hidden w-72 mb-4 text-black border border-gray-200"
+              className="bg-white rounded-2xl shadow-2xl overflow-hidden w-72 max-w-[calc(100vw-2rem)] mb-4 text-black border border-gray-200"
             >
               {/* Header */}
               <div className="bg-[#25D366] p-4 flex justify-between items-center text-white">
@@ -71,8 +71,10 @@ export default function FixedFooter() {
         </button>
       </div>
 
-      {/* Immersive Floating Bottom Pill */}
-      <div className="fixed bottom-6 left-1/2 -translate-x-1/2 w-[95%] max-w-md z-40">
+      {/* Immersive Floating Bottom Pill — desktop/tablet only. On mobile this
+          duplicated the Hero's own inline CTAs and sat fixed on top of them
+          in the first viewport, so it's dropped there in favor of those. */}
+      <div className="hidden md:block fixed bottom-6 left-1/2 -translate-x-1/2 w-[95%] max-w-md z-40">
         <motion.div 
           initial={{ y: 50, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}

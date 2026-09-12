@@ -36,7 +36,7 @@ export default function Hero() {
   };
 
   return (
-    <section className="relative min-h-screen pt-32 pb-40 md:pb-16 overflow-hidden flex flex-col justify-center">
+    <section className="relative min-h-screen pt-32 pb-44 md:pb-16 overflow-hidden flex flex-col justify-center">
       {/* Immersive Architectural Grid */}
       <div className="absolute inset-0 z-0 opacity-[0.03] dark:opacity-[0.02]" 
         style={{

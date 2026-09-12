@@ -33,6 +33,21 @@ function makeId() {
   return Math.random().toString(36).slice(2);
 }
 
+/** Matches Tailwind's `sm` breakpoint (640px) — below it, the panel becomes a bottom sheet. */
+function useIsMobile() {
+  const [isMobile, setIsMobile] = useState(false);
+  useEffect(() => {
+    if (typeof window === "undefined" || !window.matchMedia) return;
+    const mq = window.matchMedia("(max-width: 639px)");
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- gates client-only matchMedia read to avoid an SSR/CSR hydration mismatch
+    setIsMobile(mq.matches);
+    const handler = (e: MediaQueryListEvent) => setIsMobile(e.matches);
+    mq.addEventListener("change", handler);
+    return () => mq.removeEventListener("change", handler);
+  }, []);
+  return isMobile;
+}
+
 function usePrefersReducedMotion() {
   const [reduced, setReduced] = useState(false);
   useEffect(() => {
@@ -81,6 +96,7 @@ function ChatAvatar({ isSpeaking, size = 32 }: { isSpeaking: boolean; size?: num
 }
 
 export default function ChatWidget() {
+  const isMobile = useIsMobile();
   const [isOpen, setIsOpen] = useState(false);
   const [isMinimized, setIsMinimized] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -298,10 +314,10 @@ export default function ChatWidget() {
       {/* Invisible full-viewport frame used only to bound the drag gesture. */}
       <div ref={viewportRef} className="fixed inset-0 pointer-events-none z-[59]" aria-hidden />
 
-      <div className="fixed bottom-44 right-4 md:right-8 z-[60] flex flex-col items-end gap-3">
+      <div className="fixed bottom-28 md:bottom-44 right-4 md:right-8 z-[60] flex flex-col items-end gap-3">
         {isOpen && (
           <motion.div
-            drag
+            drag={!isMobile}
             dragListener={false}
             dragControls={dragControls}
             dragMomentum={false}
@@ -309,17 +325,23 @@ export default function ChatWidget() {
             dragConstraints={viewportRef}
             onDragEnd={handleDragEnd}
             initial={false}
-            animate={{ x: panelOffset.x, y: panelOffset.y }}
-            className="w-[92vw] max-w-sm rounded-2xl flex flex-col overflow-hidden bg-background border border-glass-border shadow-[0_20px_60px_rgba(0,0,0,0.35)]"
+            animate={isMobile ? { x: 0, y: 0 } : { x: panelOffset.x, y: panelOffset.y }}
+            className={
+              isMobile
+                ? "fixed inset-x-0 bottom-0 w-full rounded-t-2xl flex flex-col overflow-hidden bg-background border-t border-glass-border shadow-[0_-10px_60px_rgba(0,0,0,0.35)]"
+                : "w-[92vw] max-w-sm rounded-2xl flex flex-col overflow-hidden bg-background border border-glass-border shadow-[0_20px_60px_rgba(0,0,0,0.35)]"
+            }
             style={
               isMinimized
                 ? undefined
-                : { height: "clamp(320px, calc(100dvh - 260px), 600px)" }
+                : { height: isMobile ? "70dvh" : "clamp(320px, calc(100dvh - 260px), 600px)" }
             }
           >
             <div
-              onPointerDown={handleDragStart}
-              className="flex items-center gap-2.5 px-4 py-3 border-b border-glass-border bg-glass cursor-grab active:cursor-grabbing touch-none select-none"
+              onPointerDown={isMobile ? undefined : handleDragStart}
+              className={`flex items-center gap-2.5 px-4 py-3 border-b border-glass-border bg-glass select-none ${
+                isMobile ? "" : "cursor-grab active:cursor-grabbing touch-none"
+              }`}
             >
               <ChatAvatar isSpeaking={isSpeaking} />
               <div className="min-w-0 flex-1">
@@ -469,10 +491,15 @@ export default function ChatWidget() {
           </motion.div>
         )}
 
+        {/* On mobile, the open sheet covers this spot anyway and has its own
+            close button — hiding the FAB avoids it rendering on top of the sheet
+            (they're sibling elements, so DOM order would otherwise paint it over). */}
         <button
           onClick={() => (isOpen ? handleClose() : setIsOpen(true))}
           aria-label={isOpen ? "Close AI assistant" : "Open AI assistant"}
-          className="relative w-14 h-14 rounded-full bg-accent text-black flex items-center justify-center shadow-[0_8px_24px_rgba(0,0,0,0.3)] hover:scale-105 active:scale-95 transition-transform"
+          className={`relative w-14 h-14 rounded-full bg-accent text-black flex items-center justify-center shadow-[0_8px_24px_rgba(0,0,0,0.3)] hover:scale-105 active:scale-95 transition-transform ${
+            isOpen && isMobile ? "hidden" : ""
+          }`}
         >
           {isOpen ? <X size={24} /> : <Sparkles size={24} />}
           {!isOpen && (
