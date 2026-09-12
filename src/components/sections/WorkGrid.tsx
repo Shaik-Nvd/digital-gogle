@@ -87,6 +87,7 @@ export default function WorkGrid() {
   const trackRef = useRef<HTMLDivElement>(null);
   const x = useMotionValue(0);
   const [isPaused, setIsPaused] = useState(false);
+  const [imageErrors, setImageErrors] = useState<Record<number, boolean>>({});
   const prefersReducedMotion = useReducedMotion();
 
   useAnimationFrame((_, delta) => {
@@ -136,14 +137,23 @@ export default function WorkGrid() {
               className="group/card cursor-pointer shrink-0 block w-[85vw] sm:w-[400px] md:w-[500px] rounded-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/60 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
             >
               <div className="relative w-full aspect-[4/3] rounded-2xl overflow-hidden mb-6 glass-panel border border-glass-border shadow-2xl transition-[box-shadow,border-color] duration-500 ease-out group-hover/card:border-accent/50 group-hover/card:shadow-[0_28px_70px_-24px_rgba(196,240,66,0.4)]">
-                {/* Project Cover Image */}
-                <Image
-                  src={project.image || `https://s0.wordpress.com/mshots/v1/${encodeURIComponent(project.url)}?w=800`}
-                  alt={project.title}
-                  fill
-                  sizes="(max-width: 768px) 85vw, (max-width: 1200px) 400px, 500px"
-                  className="object-cover transition-transform duration-700 ease-out group-hover/card:scale-110"
-                />
+                {/* Project Cover Image (falls back to a gradient tile if the screenshot service fails) */}
+                {imageErrors[project.id] ? (
+                  <div className={`absolute inset-0 bg-gradient-to-br ${project.color} flex items-center justify-center transition-transform duration-700 ease-out group-hover/card:scale-110`}>
+                    <span className="font-mono text-white/60 text-sm md:text-base px-6 text-center">
+                      {project.tagline}
+                    </span>
+                  </div>
+                ) : (
+                  <Image
+                    src={project.image || `https://s0.wordpress.com/mshots/v1/${encodeURIComponent(project.url)}?w=800`}
+                    alt={project.title}
+                    fill
+                    sizes="(max-width: 768px) 85vw, (max-width: 1200px) 400px, 500px"
+                    className="object-cover transition-transform duration-700 ease-out group-hover/card:scale-110"
+                    onError={() => setImageErrors((prev) => ({ ...prev, [project.id]: true }))}
+                  />
+                )}
                 <div className="absolute inset-0 bg-black/40 group-hover/card:bg-black/10 transition-colors duration-500" />
 
                 {/* LIVE Badge */}
