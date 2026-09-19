@@ -7,57 +7,65 @@ import { useState } from "react";
 const services = [
   {
     id: "01",
-    title: "Cybersecurity & Security Testing",
-    description: "Security assessments and testing across your apps, APIs, and infrastructure.",
-    tags: ["Website & Web Application Security", "Vulnerability Assessment & Scanning", "Penetration Testing", "Mobile Application Security Testing", "API Security Testing", "Infrastructure Security Testing", "Cloud Security Assessment"],
-    label: "security.audit()",
-    icon: Shield,
-  },
-  {
-    id: "02",
-    title: "AI Agents & Intelligent Automation",
-    description: "Custom AI assistants and intelligent agents trained on your business knowledge.",
-    tags: ["Custom AI Agents", "AI Chatbots & Virtual Assistants", "RAG-Based AI Solutions", "AI-Powered Business Automation", "Custom LLM Solutions", "AI Agent Integration with Business Systems", "Knowledge-Based AI Assistants"],
-    label: "ai.deploy()",
-    icon: Bot,
-  },
-  {
-    id: "03",
-    title: "Website & Software Development",
-    description: "Custom websites, e-commerce platforms, and business software built around how you operate.",
-    tags: ["Business Websites", "E-Commerce Websites", "CRM & Business Management Software", "Enterprise Software", "Custom Web Applications"],
+    title: "People visit your website, but nobody calls.",
+    description: "Slow, confusing sites lose visitors in seconds. We build fast, clear websites that turn visits into enquiries, bookings, and orders.",
+    expandedExtra: "Still running your business on WhatsApp, Excel, and memory? We build simple CRM and business software that keeps every lead, order, and customer in one place.",
+    cta: "Get a free website review",
+    tags: ["Website & Software Development", "Business Websites", "E-Commerce", "CRM Software", "Custom Web Apps"],
     label: "build.software()",
     icon: Monitor,
   },
   {
-    id: "04",
-    title: "Mobile App Development",
-    description: "Android and iOS apps designed and built around your business needs.",
-    tags: ["Android & iOS Applications", "Custom Business Applications", "Mobile App Development"],
+    id: "02",
+    title: "Your customers live on their phones. Your business doesn't.",
+    description: "Give customers a fast way to book, order, and come back, without depending on marketplaces that take a cut.",
+    cta: "Tell us your app idea",
+    tags: ["Mobile App Development", "Android Applications", "iOS Applications", "Custom Business Apps"],
     label: "app.build()",
     icon: Smartphone,
   },
   {
-    id: "05",
-    title: "Web Data & Automation",
-    description: "Structured data collection and workflow automation pulled from the web and your existing systems.",
-    tags: ["Web Scraping", "Data Extraction", "Data Collection & Processing", "API Integration", "Data Automation"],
+    id: "03",
+    title: "Answering the same customer questions 100 times a day?",
+    description: "Your team is buried in repetitive replies, and leads go cold overnight. An AI agent trained on your business answers instantly, 24/7, and hands the serious leads to you.",
+    cta: "Try a demo on your own FAQs",
+    tags: ["AI Agents & Intelligent Automation", "Custom AI Chatbots", "RAG-Based AI Solutions", "Business Automation", "Custom LLMs"],
+    label: "ai.deploy()",
+    icon: Bot,
+  },
+  {
+    id: "04",
+    title: "Hours lost to copy-paste, spreadsheets, and checking competitor prices?",
+    description: "We automate the boring, repetitive work so your team spends time on decisions, not data entry.",
+    cta: "Tell us your most annoying manual task",
+    tags: ["Web Data & Automation", "Web Scraping", "Data Extraction", "API Integration", "Data Processing"],
     label: "data.automate()",
     icon: Database,
   },
   {
-    id: "06",
-    title: "Lead Generation & Digital Marketing",
-    description: "Marketing and outreach programs built to bring in and convert the right leads.",
-    tags: ["Lead Generation", "SEO", "Social Media Marketing", "Email Marketing", "Online Advertising", "Digital Outreach"],
+    id: "05",
+    title: "Spending on ads, but the phone isn't ringing?",
+    description: "Traffic isn't customers. We fix the path from click to enquiry with SEO, ads, and follow-up that reach people who are ready to buy.",
+    cta: "Get a free lead-leak audit",
+    tags: ["Lead Generation", "Digital Marketing", "SEO", "Social Media", "Email Outreach", "Online Advertising"],
     label: "growth.scale()",
     icon: TrendingUp,
   },
   {
+    id: "06",
+    title: "One breach away from losing your customers' trust.",
+    description: "We find the weak spots in your website, app, and APIs before attackers do, and tell you exactly how to fix them.",
+    cta: "Book a security check",
+    tags: ["Cybersecurity & Security Testing", "Website & Web Application Security", "Vulnerability Assessment", "Penetration Testing", "API Security"],
+    label: "security.audit()",
+    icon: Shield,
+  },
+  {
     id: "07",
-    title: "Video Editing & Content Creation",
-    description: "Video content edited for marketing, social, and brand storytelling.",
-    tags: ["Professional Video Editing", "Promotional Videos", "Social Media Reels & Short Videos", "Business & Marketing Videos", "Custom Video Content"],
+    title: "Posting regularly, but nobody's watching?",
+    description: "Scroll-stopping reels and promo videos that make people stop, watch, and enquire.",
+    cta: "Send us your raw footage",
+    tags: ["Video Editing & Content Creation", "Promotional Videos", "Social Media Reels", "Brand Storytelling"],
     label: "content.produce()",
     icon: Video,
   },
@@ -110,9 +118,18 @@ const ServiceRow = ({ service, index }: { service: Service; index: number }) => 
           <h3 className={`text-2xl md:text-4xl font-bold tracking-tight mb-3 transition-colors duration-300 ${isOpen ? "text-foreground drop-shadow-md" : "text-foreground/80"}`}>
             {service.title}
           </h3>
-          <p className="text-muted text-sm md:text-base leading-relaxed max-w-xl">
+          <p className="text-muted text-sm md:text-base leading-relaxed max-w-xl mb-4">
             {service.description}
           </p>
+          <div>
+            <a 
+              href="#contact" 
+              className="inline-flex items-center text-sm font-semibold text-accent hover:text-white transition-colors"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {service.cta} <span className="ml-2">→</span>
+            </a>
+          </div>
         </div>
 
         {/* Right: Terminal Label */}
@@ -132,6 +149,11 @@ const ServiceRow = ({ service, index }: { service: Service; index: number }) => 
         className="overflow-hidden"
       >
         <div className="pt-8 px-2 md:px-8 lg:pl-[calc(25%+3rem)] pb-4">
+          {service.expandedExtra && (
+            <p className="text-muted text-sm md:text-base leading-relaxed max-w-xl mb-6">
+              {service.expandedExtra}
+            </p>
+          )}
           <div className="flex flex-wrap gap-2 md:gap-3">
             {service.tags.map((tag: string, tagIdx: number) => (
               <motion.span
@@ -166,11 +188,11 @@ export default function Services() {
           <div>
             <p className="text-sm font-mono text-accent mb-4 tracking-widest uppercase">03 / CAPABILITIES</p>
             <h2 className="text-5xl md:text-7xl font-black tracking-tighter">
-              Services Array.
+              Problems we solve for you.
             </h2>
           </div>
           <div className="md:text-right text-muted font-mono text-sm uppercase tracking-wider max-w-xs">
-            Hover over a system module to expand architecture details.
+            Tap a card to see exactly how we fix it.
           </div>
         </motion.div>
 

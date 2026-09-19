@@ -94,7 +94,7 @@ export default function Contact() {
           className="max-w-4xl mx-auto glass-panel p-6 md:p-8 rounded-2xl border border-glass-border"
         >
           <p className="text-sm text-muted mb-6">
-            Or tell us about your project — this opens a pre-filled email in your mail app.
+            Tell us what's not working on your website or in your business. We'll reply with a free website check.
           </p>
           <div className="grid md:grid-cols-2 gap-4 mb-4">
             <div>
