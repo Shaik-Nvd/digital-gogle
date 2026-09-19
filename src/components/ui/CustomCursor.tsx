@@ -48,21 +48,43 @@ export default function CustomCursor() {
     };
   }, [rawX, rawY]);
 
+  const trailX = useSpring(rawX, { damping: 40, stiffness: 200, mass: 0.8 });
+  const trailY = useSpring(rawY, { damping: 40, stiffness: 200, mass: 0.8 });
+
   if (!isVisible) return null;
 
   return (
-    <motion.div
-      className="hidden md:block fixed top-0 left-0 z-[100] w-4 h-4 bg-accent rounded-full pointer-events-none mix-blend-difference"
-      style={{ x, y }}
-      animate={{
-        scale: isHovered ? 2.5 : 1,
-        opacity: 0.8,
-      }}
-      transition={{
-        type: "tween",
-        ease: "backOut",
-        duration: 0.15,
-      }}
-    />
+    <>
+      {/* Ambient Spotlight Trail */}
+      <motion.div
+        className="hidden md:block fixed top-0 left-0 z-[-1] pointer-events-none rounded-full"
+        style={{
+          x: trailX,
+          y: trailY,
+          width: 600,
+          height: 600,
+          marginLeft: -300,
+          marginTop: -300,
+          background: "radial-gradient(circle, rgba(196,240,66,0.08) 0%, rgba(196,240,66,0) 70%)",
+        }}
+      />
+      {/* Sharp Cursor */}
+      <motion.div
+        className="hidden md:block fixed top-0 left-0 z-[100] w-4 h-4 bg-accent rounded-full pointer-events-none mix-blend-difference"
+        style={{ 
+          x, 
+          y
+        }}
+        animate={{
+          scale: isHovered ? 2.5 : 1,
+          opacity: 0.8,
+        }}
+        transition={{
+          type: "tween",
+          ease: "backOut",
+          duration: 0.15,
+        }}
+      />
+    </>
   );
 }
