@@ -55,10 +55,10 @@ export default function Hero() {
         >
           <motion.h1
             variants={itemVariants}
-            className="text-5xl md:text-7xl font-bold tracking-tight leading-[1.05] mb-6"
+            className="text-5xl md:text-7xl font-bold tracking-tight leading-[1.1] md:leading-[1.15] mb-6"
           >
             Is your website <br className="hidden md:block" />
-            <span className="bg-clip-text text-transparent bg-gradient-to-r from-muted to-foreground italic font-light">costing you customers?</span>
+            <span className="bg-clip-text text-transparent bg-gradient-to-r from-muted to-foreground italic font-light box-decoration-clone py-2">costing you customers?</span>
           </motion.h1>
 
           <motion.p variants={itemVariants} className="text-[15px] md:text-lg text-muted mb-10 max-w-xl leading-relaxed">
