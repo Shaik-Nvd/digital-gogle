@@ -62,7 +62,7 @@ export default function Hero() {
           </motion.h1>
 
           <motion.p variants={itemVariants} className="text-[15px] md:text-lg text-muted mb-10 max-w-xl leading-relaxed">
-            Slow pages, missed enquiries, and a site that looks like everyone else's. We build the websites, AI tools, and marketing that turn visitors into paying customers.
+            Slow pages, missed enquiries, and a site that looks like everyone else&apos;s. We build the websites, AI tools, and marketing that turn visitors into paying customers.
           </motion.p>
 
           <motion.div variants={itemVariants} className="flex flex-col md:flex-row items-center gap-4 w-full">

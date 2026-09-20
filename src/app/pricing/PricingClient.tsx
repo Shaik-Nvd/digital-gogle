@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { motion } from "framer-motion";
+import Link from "next/link";
 import { 
   Shield, Bot, Monitor, Smartphone, TrendingUp, Video, 
   Search, Share2, FileText, Mail, ShoppingCart, ArrowRight 
@@ -200,12 +201,12 @@ export default function PricingClient() {
         <p className="text-lg text-muted mb-10 max-w-xl mx-auto leading-relaxed">
           Get a precise, customized quote based on your exact business goals and technical requirements.
         </p>
-        <a 
+        <Link 
           href="/#contact" 
           className="inline-flex items-center px-8 py-4 md:px-10 md:py-5 bg-accent text-black font-bold text-sm md:text-base rounded-full hover:scale-105 transition-all duration-300 shadow-[0_0_30px_rgba(196,240,66,0.2)] hover:shadow-[0_0_40px_rgba(196,240,66,0.5)]"
         >
           START YOUR PROJECT <ArrowRight size={20} className="ml-2" />
-        </a>
+        </Link>
       </motion.div>
     </div>
   );
