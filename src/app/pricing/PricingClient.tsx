@@ -1,10 +1,12 @@
 "use client";
 
+import { useState } from "react";
 import { motion } from "framer-motion";
 import { 
   Shield, Bot, Monitor, Smartphone, TrendingUp, Video, 
   Search, Share2, FileText, Mail, ShoppingCart, ArrowRight 
 } from "lucide-react";
+import WebsitePricingModal from "./WebsitePricingModal";
 
 const pricingTiers = [
   {
@@ -106,8 +108,14 @@ const itemVariants = {
 };
 
 export default function PricingClient() {
+  const [selectedTier, setSelectedTier] = useState<string | null>(null);
+
   return (
     <div className="pt-32 pb-24 md:pb-32 container mx-auto px-6 max-w-7xl min-h-screen relative z-10">
+      <WebsitePricingModal 
+        isOpen={selectedTier === "Website development"} 
+        onClose={() => setSelectedTier(null)} 
+      />
       
       {/* Header */}
       <motion.div 
@@ -141,7 +149,8 @@ export default function PricingClient() {
           <motion.div 
             key={idx} 
             variants={itemVariants}
-            className="group relative glass-panel p-8 rounded-3xl border border-glass-border hover:border-accent/50 transition-all duration-500 overflow-hidden flex flex-col justify-between min-h-[300px]"
+            onClick={() => tier.name === "Website development" ? setSelectedTier(tier.name) : null}
+            className={`group relative glass-panel p-8 rounded-3xl border border-glass-border hover:border-accent/50 transition-all duration-500 overflow-hidden flex flex-col justify-between min-h-[300px] ${tier.name === "Website development" ? "cursor-pointer" : ""}`}
           >
             {/* Background Glow Effect on Hover */}
             <div className="absolute inset-0 bg-gradient-to-br from-accent/0 via-accent/0 to-accent/5 opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none" />
