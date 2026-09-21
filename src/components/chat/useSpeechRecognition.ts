@@ -35,13 +35,17 @@ function getSpeechRecognitionCtor(): SpeechRecognitionConstructor | null {
   return w.SpeechRecognition ?? w.webkitSpeechRecognition ?? null;
 }
 
-export function useSpeechRecognition(lang: string) {
+function browserLocale() { return typeof navigator !== "undefined" && navigator.language ? navigator.language : "en-US"; }
+
+export function useSpeechRecognition() {
   const [isSupported, setIsSupported] = useState(false);
   const [isListening, setIsListening] = useState(false);
   const [interimTranscript, setInterimTranscript] = useState("");
   const [error, setError] = useState<string | null>(null);
   const recognitionRef = useRef<SpeechRecognitionLike | null>(null);
   const continuousModeRef = useRef(false);
+  const mountedRef = useRef(true);
+  const immediateEndsRef = useRef(0);
   const onFinalRef = useRef<(text: string) => void>(() => {});
 
   useEffect(() => {
@@ -67,16 +71,18 @@ export function useSpeechRecognition(lang: string) {
       continuousModeRef.current = opts.continuous;
 
       const recognition = new Ctor();
-      recognition.lang = lang === "auto" ? "en-US" : lang;
+      recognition.lang = browserLocale();
       recognition.continuous = opts.continuous;
       recognition.interimResults = true;
 
+      let gotUsefulResult = false;
       recognition.onresult = (event) => {
         let interim = "";
         for (let i = event.resultIndex; i < event.results.length; i++) {
           const result = event.results[i];
           const transcript = result[0].transcript;
           if (result.isFinal) {
+            if (transcript.trim()) gotUsefulResult = true;
             onFinalRef.current(transcript.trim());
             setInterimTranscript("");
           } else {
@@ -98,7 +104,14 @@ export function useSpeechRecognition(lang: string) {
 
       recognition.onend = () => {
         setInterimTranscript("");
-        if (continuousModeRef.current) {
+        if (continuousModeRef.current && mountedRef.current) {
+          immediateEndsRef.current = gotUsefulResult ? 0 : immediateEndsRef.current + 1;
+          if (immediateEndsRef.current >= 3) {
+            continuousModeRef.current = false;
+            setIsListening(false);
+            setError("The microphone stopped listening. Please check permission and try again.");
+            return;
+          }
           try {
             recognition.start();
           } catch {
@@ -117,11 +130,12 @@ export function useSpeechRecognition(lang: string) {
         setError("Couldn't start the microphone.");
       }
     },
-    [lang]
+    []
   );
 
   useEffect(() => {
     return () => {
+      mountedRef.current = false;
       continuousModeRef.current = false;
       recognitionRef.current?.abort();
     };
