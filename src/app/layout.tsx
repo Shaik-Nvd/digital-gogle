@@ -24,11 +24,11 @@ const jetbrainsMono = JetBrains_Mono({
 export const metadata: Metadata = {
   metadataBase: new URL("https://digitalgogle.com"),
   title: {
-    default: "Digital Gogle Studio | Premium Web & AI Agency",
+    default: "Digital Gogle Studio | Web Development & AI Agency in Bangalore",
     template: "%s | Digital Gogle Studio",
   },
-  description: "Digital Gogle Studio engineers premium digital systems. We specialize in high-performance web development, AI integrations, mobile apps, and elite digital marketing strategies in Bangalore and globally.",
-  keywords: ["Cybersecurity Testing", "Penetration Testing", "Custom AI Agents", "RAG AI Solutions", "Business Automation", "Web Development Bangalore", "E-Commerce Websites", "Mobile App Development", "Web Scraping", "API Integration", "Lead Generation", "SEO", "Digital Marketing", "Video Editing", "Premium Digital Agency"],
+  description: "Losing customers to a slow website, manual work or weak security? Digital Gogle Studio builds fast websites, AI agents, mobile apps and marketing systems that bring in and convert customers.",
+  keywords: ["Fix slow website", "Get more leads online", "Automate business tasks", "Website redesign Bangalore", "Turn traffic into sales", "Business growth agency"],
   alternates: {
     canonical: "https://digitalgogle.com",
   },
@@ -43,8 +43,8 @@ export const metadata: Metadata = {
     },
   },
   openGraph: {
-    title: "Digital Gogle Studio | Elite Digital Engineering",
-    description: "Building scalable digital experiences, immersive 3D interfaces, and AI-driven growth systems.",
+    title: "Digital Gogle Studio | Web Development & AI Agency in Bangalore",
+    description: "Losing customers to a slow website, manual work or weak security? Digital Gogle Studio builds fast websites, AI agents, mobile apps and marketing systems that bring in and convert customers.",
     url: "https://digitalgogle.com",
     siteName: "Digital Gogle Studio",
     locale: "en_US",
@@ -52,8 +52,8 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Digital Gogle Studio | Premium Web & AI Agency",
-    description: "Building scalable digital experiences, immersive 3D interfaces, and AI-driven growth systems.",
+    title: "Digital Gogle Studio | Web Development & AI Agency in Bangalore",
+    description: "Losing customers to a slow website, manual work or weak security? Digital Gogle Studio builds fast websites, AI agents, mobile apps and marketing systems that bring in and convert customers.",
   },
 };
 

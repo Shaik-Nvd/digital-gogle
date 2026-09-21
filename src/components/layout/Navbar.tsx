@@ -17,16 +17,19 @@ export default function Navbar() {
 
         {/* Desktop Nav */}
         <nav className="hidden md:flex items-center space-x-8 text-sm font-medium">
-          <Link href="#work" className="hover:text-accent transition-colors">
+          <Link href="/#work" className="hover:text-accent transition-colors">
             Work
           </Link>
-          <Link href="#services" className="hover:text-accent transition-colors">
+          <Link href="/#services" className="hover:text-accent transition-colors">
             Services
           </Link>
-          <Link href="#process" className="hover:text-accent transition-colors">
+          <Link href="/pricing" className="hover:text-accent transition-colors">
+            Pricing
+          </Link>
+          <Link href="/#process" className="hover:text-accent transition-colors">
             Process
           </Link>
-          <Link href="#testimonials" className="hover:text-accent transition-colors">
+          <Link href="/#testimonials" className="hover:text-accent transition-colors">
             Testimonials
           </Link>
         </nav>
@@ -34,7 +37,7 @@ export default function Navbar() {
         <div className="hidden md:flex items-center space-x-4">
           <ThemeToggle />
           <Link
-            href="#contact"
+            href="/#contact"
             className="px-5 py-2.5 bg-foreground text-background font-bold text-sm rounded-full hover:bg-accent hover:text-black transition-colors shadow-[0_0_15px_rgba(196,240,66,0)] hover:shadow-[0_0_15px_rgba(196,240,66,0.3)]"
           >
             START A PROJECT
@@ -59,23 +62,26 @@ export default function Navbar() {
       {isOpen && (
         <div className="md:hidden bg-background/95 backdrop-blur-xl border-b border-glass-border">
           <nav className="flex flex-col px-6 py-6 space-y-6 text-lg font-medium">
-            <Link href="#work" onClick={() => setIsOpen(false)}>
+            <Link href="/#work" onClick={() => setIsOpen(false)}>
               Work
             </Link>
-            <Link href="#services" onClick={() => setIsOpen(false)}>
+            <Link href="/#services" onClick={() => setIsOpen(false)}>
               Services
             </Link>
-            <Link href="#process" onClick={() => setIsOpen(false)}>
+            <Link href="/pricing" onClick={() => setIsOpen(false)}>
+              Pricing
+            </Link>
+            <Link href="/#process" onClick={() => setIsOpen(false)}>
               Process
             </Link>
-            <Link href="#testimonials" onClick={() => setIsOpen(false)}>
+            <Link href="/#testimonials" onClick={() => setIsOpen(false)}>
               Testimonials
             </Link>
-            <Link href="#contact" onClick={() => setIsOpen(false)}>
+            <Link href="/#contact" onClick={() => setIsOpen(false)}>
               Contact
             </Link>
             <Link
-              href="#contact"
+              href="/#contact"
               onClick={() => setIsOpen(false)}
               className="mt-4 px-6 py-3 bg-foreground text-background text-center font-bold rounded-full w-full max-w-[200px]"
             >
