@@ -71,6 +71,7 @@ export function useSpeechRecognition() {
       continuousModeRef.current = opts.continuous;
 
       const recognition = new Ctor();
+      let triedFallbackLocale = false;
       recognition.lang = browserLocale();
       recognition.continuous = opts.continuous;
       recognition.interimResults = true;
@@ -105,6 +106,11 @@ export function useSpeechRecognition() {
       recognition.onend = () => {
         setInterimTranscript("");
         if (continuousModeRef.current && mountedRef.current) {
+          if (!gotUsefulResult && !triedFallbackLocale && recognition.lang !== "en-US") {
+            triedFallbackLocale = true;
+            recognition.lang = "en-US";
+            try { recognition.start(); return; } catch { /* continue with normal recovery */ }
+          }
           immediateEndsRef.current = gotUsefulResult ? 0 : immediateEndsRef.current + 1;
           if (immediateEndsRef.current >= 3) {
             continuousModeRef.current = false;
