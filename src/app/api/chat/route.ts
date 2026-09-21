@@ -12,7 +12,7 @@ export async function POST(request: Request) {
   const messages = Array.isArray(body.messages) ? body.messages.filter((m): m is ChatMessage => Boolean(m) && (m.role === "user" || m.role === "assistant") && typeof m.content === "string").slice(-20) : [];
   if (!messages.length) return new Response("A message is required.", { status: 400 });
   let upstream: Response;
-  try { upstream = await fetch(GROQ_ENDPOINT, { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` }, body: JSON.stringify({ model: GROQ_MODEL, stream: true, messages: [{ role: "system", content: createChatPrompt(body.context, body.inputMode === "voice" ? "voice" : "text") }, ...messages] }), signal: request.signal }); }
+  try { upstream = await fetch(GROQ_ENDPOINT, { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` }, body: JSON.stringify({ model: GROQ_MODEL, stream: true, temperature: 0.4, messages: [{ role: "system", content: createChatPrompt(body.context, body.inputMode === "voice" ? "voice" : "text") }, ...messages] }), signal: request.signal }); }
   catch (error) { console.error("Groq chat request failed", error); return new Response("The chat service is temporarily unavailable.", { status: 502 }); }
   if (!upstream.ok || !upstream.body) { console.error("Groq chat request failed", { status: upstream.status, detail: (await upstream.text()).slice(0, 500) }); return new Response(upstream.status === 429 ? "The assistant is busy. Please try again in a moment." : "The chat service is temporarily unavailable.", { status: upstream.status || 502 }); }
   const reader = upstream.body.getReader(), decoder = new TextDecoder(), encoder = new TextEncoder();

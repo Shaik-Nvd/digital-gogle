@@ -24,11 +24,14 @@ export function stripMarkdownForSpeech(text: string): string {
     .trim();
 }
 
-export function normaliseSpeech(text: string): string {
+export function normaliseSpeech(text: string, indic = false): string {
   return stripMarkdownForSpeech(text)
-    .replace(/https?:\/\/\S+/gi, "our website")
-    .replace(/\b[\w.+-]+@[\w.-]+\.[A-Za-z]{2,}\b/g, "our email address")
-    .replace(/₹\s?(\d+)(k)?\b/gi, (_, amount: string, k: string | undefined) => `${wordsForNumber(Number(amount) * (k ? 1000 : 1))} rupees`)
+    .replace(/https?:\/\/\S+/gi, indic ? "हमारी वेबसाइट" : "our website")
+    .replace(/\b[\w.+-]+@[\w.-]+\.[A-Za-z]{2,}\b/g, indic ? "हमारा ईमेल" : "our email address")
+    .replace(/₹\s?(\d+)(k)?\b/gi, (_, amount: string, k: string | undefined) => {
+      const value = Number(amount) * (k ? 1000 : 1);
+      return indic ? `${value} रुपये` : `${wordsForNumber(value)} rupees`;
+    })
     .replace(/\b(\d{1,2})\s*\/\s*7\b/g, "$1 seven")
     .replace(/\bAI\s*\/\s*ML\b/gi, "A I and M L")
     .replace(/\b(\d{5})[\s-]?(\d{5})\b/g, "$1 $2")
@@ -41,6 +44,6 @@ export function normaliseSpeech(text: string): string {
 export function truncateSpeech(text: string, max = 1000): string {
   if (text.length <= max) return text;
   const excerpt = text.slice(0, max);
-  const boundary = Math.max(excerpt.lastIndexOf(". "), excerpt.lastIndexOf("? "), excerpt.lastIndexOf("! "));
+  const boundary = Math.max(excerpt.lastIndexOf(". "), excerpt.lastIndexOf("? "), excerpt.lastIndexOf("! "), excerpt.lastIndexOf("। "));
   return (boundary > 300 ? excerpt.slice(0, boundary + 1) : excerpt).trim();
 }

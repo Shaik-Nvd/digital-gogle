@@ -8,7 +8,7 @@ const initial: ChatContext = { currentSection: "hero", viewedSections: [], dwell
 export function usePageContext() {
   const [context, setContext] = useState<ChatContext>(initial);
   const activeRef = useRef<ChatSection>("hero");
-  const enteredAt = useRef(Date.now());
+  const enteredAt = useRef(0);
   const dwell = useRef<Partial<Record<ChatSection, number>>>({});
 
   useEffect(() => {
@@ -21,6 +21,7 @@ export function usePageContext() {
       activeRef.current = section; enteredAt.current = now;
       setContext({ currentSection: section, viewedSections: Array.from(new Set([...Object.keys(dwell.current), section])) as ChatSection[], dwellSeconds: { ...dwell.current }, pathname: window.location.pathname, referrer: document.referrer, isReturning: sessionStorage.getItem("dg-visited") === "true", localTime: new Intl.DateTimeFormat(undefined, { hour: "numeric", minute: "2-digit" }).format(new Date()) });
     };
+    enteredAt.current = Date.now();
     sessionStorage.setItem("dg-visited", "true");
     const observer = new IntersectionObserver((entries) => {
       const mostVisible = entries.filter((entry) => entry.isIntersecting).sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
