@@ -1,110 +1,21 @@
+import { createChatPrompt, type ChatInputMode } from "@/lib/chat-prompt";
+import type { ChatContext } from "@/lib/chat-context";
 export const runtime = "nodejs";
-
 const GROQ_ENDPOINT = "https://api.groq.com/openai/v1/chat/completions";
 const GROQ_MODEL = "openai/gpt-oss-120b";
-
-type ChatMessage = {
-  role: "user" | "assistant";
-  content: string;
-};
-
-const SYSTEM_PROMPT = `You are a helpful, friendly assistant for Digital Gogle Studio, a web/AI development agency.
-Detect the language of the user's latest message yourself (regardless of what language earlier turns were in) and reply in that same language, matching script and tone naturally.
-Keep answers concise and conversational since this is a live chat widget, not an essay.`;
-
-export async function POST(req: Request) {
+type ChatMessage = { role: "user" | "assistant"; content: string };
+export async function POST(request: Request) {
   const apiKey = process.env.GROQ_API_KEY;
-  if (!apiKey) {
-    return new Response("Server is missing GROQ_API_KEY.", { status: 500 });
-  }
-
-  let body: { messages?: ChatMessage[]; language?: string };
-  try {
-    body = await req.json();
-  } catch {
-    return new Response("Invalid JSON body.", { status: 400 });
-  }
-
-  const messages = Array.isArray(body.messages) ? body.messages : [];
-  if (messages.length === 0) {
-    return new Response("No messages provided.", { status: 400 });
-  }
-
-  const languageHint = body.language && body.language !== "auto"
-    ? `\nThe user has manually selected "${body.language}" as their preferred reply language — reply in it regardless of the language they typed in.`
-    : "";
-
-  const upstream = await fetch(GROQ_ENDPOINT, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${apiKey}`,
-    },
-    body: JSON.stringify({
-      model: GROQ_MODEL,
-      stream: true,
-      messages: [
-        { role: "system", content: SYSTEM_PROMPT + languageHint },
-        ...messages,
-      ],
-    }),
-  });
-
-  if (!upstream.ok || !upstream.body) {
-    const detail = await upstream.text().catch(() => "");
-    const status = upstream.status || 502;
-    const message =
-      status === 429
-        ? "Groq rate limit reached. Please wait a moment and try again."
-        : `Groq API error (${status}): ${detail.slice(0, 300)}`;
-    return new Response(message, { status });
-  }
-
-  const reader = upstream.body.getReader();
-  const decoder = new TextDecoder();
-  const encoder = new TextEncoder();
-
-  const stream = new ReadableStream({
-    async start(controller) {
-      let buffer = "";
-      try {
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
-          buffer += decoder.decode(value, { stream: true });
-          const lines = buffer.split("\n");
-          buffer = lines.pop() ?? "";
-
-          for (const rawLine of lines) {
-            const line = rawLine.trim();
-            if (!line.startsWith("data:")) continue;
-            const data = line.slice(5).trim();
-            if (data === "[DONE]") {
-              controller.close();
-              return;
-            }
-            try {
-              const json = JSON.parse(data);
-              const delta: string | undefined = json.choices?.[0]?.delta?.content;
-              if (delta) controller.enqueue(encoder.encode(delta));
-            } catch {
-              // ignore malformed SSE chunk
-            }
-          }
-        }
-        controller.close();
-      } catch (err) {
-        controller.error(err);
-      }
-    },
-  });
-
-  return new Response(stream, {
-    headers: {
-      "Content-Type": "text/plain; charset=utf-8",
-      "X-Content-Type-Options": "nosniff",
-      "Cache-Control": "no-cache",
-      "X-Accel-Buffering": "no",
-    },
-  });
+  if (!apiKey) return new Response("Chat is unavailable.", { status: 503 });
+  let body: { messages?: ChatMessage[]; inputMode?: ChatInputMode; context?: ChatContext };
+  try { body = await request.json(); } catch { return new Response("Invalid request.", { status: 400 }); }
+  const messages = Array.isArray(body.messages) ? body.messages.filter((m): m is ChatMessage => Boolean(m) && (m.role === "user" || m.role === "assistant") && typeof m.content === "string").slice(-20) : [];
+  if (!messages.length) return new Response("A message is required.", { status: 400 });
+  let upstream: Response;
+  try { upstream = await fetch(GROQ_ENDPOINT, { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` }, body: JSON.stringify({ model: GROQ_MODEL, stream: true, messages: [{ role: "system", content: createChatPrompt(body.context, body.inputMode === "voice" ? "voice" : "text") }, ...messages] }), signal: request.signal }); }
+  catch (error) { console.error("Groq chat request failed", error); return new Response("The chat service is temporarily unavailable.", { status: 502 }); }
+  if (!upstream.ok || !upstream.body) { console.error("Groq chat request failed", { status: upstream.status, detail: (await upstream.text()).slice(0, 500) }); return new Response(upstream.status === 429 ? "The assistant is busy. Please try again in a moment." : "The chat service is temporarily unavailable.", { status: upstream.status || 502 }); }
+  const reader = upstream.body.getReader(), decoder = new TextDecoder(), encoder = new TextEncoder();
+  const stream = new ReadableStream<Uint8Array>({ async start(controller) { let buffer = ""; try { while (true) { const { done, value } = await reader.read(); if (done) break; buffer += decoder.decode(value, { stream: true }); const lines = buffer.split("\n"); buffer = lines.pop() ?? ""; for (const raw of lines) { const data = raw.trim().replace(/^data:\s*/, ""); if (!data || data === "[DONE]") continue; try { const json: unknown = JSON.parse(data); const content = typeof json === "object" && json !== null ? (json as { choices?: Array<{ delta?: { content?: unknown } }> }).choices?.[0]?.delta?.content : undefined; if (typeof content === "string") controller.enqueue(encoder.encode(content)); } catch { /* ignore malformed SSE */ } } } controller.close(); } catch (error) { controller.error(error); } } });
+  return new Response(stream, { headers: { "Content-Type": "text/plain; charset=utf-8", "Cache-Control": "no-cache", "X-Accel-Buffering": "no", "X-Content-Type-Options": "nosniff" } });
 }
