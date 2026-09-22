@@ -124,10 +124,11 @@ export default function WorkGrid() {
               target="_blank"
               rel="noopener noreferrer"
               onClick={guardClick}
+              draggable={false}
               whileHover={{ y: -10 }}
               whileTap={{ y: -4 }}
               transition={{ type: "spring", stiffness: 320, damping: 26 }}
-              className="group/card cursor-pointer shrink-0 block w-[85vw] sm:w-[400px] md:w-[500px] rounded-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/60 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+              className="group/card select-none cursor-pointer shrink-0 block w-[85vw] sm:w-[400px] md:w-[500px] rounded-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/60 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
             >
               <div className="relative w-full aspect-[4/3] rounded-2xl overflow-hidden mb-6 glass-panel border border-glass-border shadow-2xl transition-[box-shadow,border-color] duration-500 ease-out group-hover/card:border-accent/50 group-hover/card:shadow-[0_28px_70px_-24px_rgba(196,240,66,0.4)]">
                 {/* Project Cover Image (falls back to a gradient tile if the screenshot service fails) */}
@@ -142,8 +143,9 @@ export default function WorkGrid() {
                     src={project.image || `https://s0.wordpress.com/mshots/v1/${encodeURIComponent(project.url)}?w=800`}
                     alt={project.title}
                     fill
+                    draggable={false}
                     sizes="(max-width: 768px) 85vw, (max-width: 1200px) 400px, 500px"
-                    className="object-cover transition-transform duration-700 ease-out group-hover/card:scale-110"
+                    className="object-cover pointer-events-none transition-transform duration-700 ease-out group-hover/card:scale-110"
                     onError={() => setImageErrors((prev) => ({ ...prev, [project.id]: true }))}
                   />
                 )}

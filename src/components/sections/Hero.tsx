@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useState, type MouseEvent } from "react";
-import { motion, useMotionValue, useSpring } from "framer-motion";
-import { Bot } from "lucide-react";
+import { useEffect, useRef, useState, type MouseEvent } from "react";
+import { motion, useMotionValue, useScroll, useSpring, useTransform } from "framer-motion";
+import { Bot, ChevronDown } from "lucide-react";
 import { useLoading } from "@/components/providers/LoadingProvider";
 import { services } from "@/lib/services";
 import HeroField from "./HeroField";
@@ -13,6 +13,7 @@ const PULSE_HEIGHTS = [45, 80, 55, 95, 65, 35];
 export default function Hero() {
   const { isLoading } = useLoading();
   const [reducedMotion, setReducedMotion] = useState(false);
+  const sectionRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
     const mql = window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -58,28 +59,42 @@ export default function Hero() {
     rotateY.set(0);
   };
 
+  // Scroll-driven depth: three layers (background, headline, panel) each move and fade at their
+  // own rate as the hero scrolls past, so leaving it reads as a cinematic exit rather than a cut —
+  // the kind of scroll-storytelling agency sites use instead of a static, one-shot hero.
+  const { scrollYProgress } = useScroll({ target: sectionRef, offset: ["start start", "end start"] });
+  const bgY = useTransform(scrollYProgress, [0, 1], [0, 120]);
+  const textY = useTransform(scrollYProgress, [0, 1], [0, -90]);
+  const textOpacity = useTransform(scrollYProgress, [0, 0.65], [1, 0]);
+  const panelY = useTransform(scrollYProgress, [0, 1], [0, -50]);
+  const panelScale = useTransform(scrollYProgress, [0, 1], [1, 0.9]);
+  const panelOpacity = useTransform(scrollYProgress, [0, 0.75], [1, 0]);
+  const scrollCueOpacity = useTransform(scrollYProgress, [0, 0.12], [1, 0]);
+
   return (
-    <section className="relative min-h-screen pt-32 pb-44 md:pb-16 overflow-hidden flex flex-col justify-center">
-      {/* Immersive Architectural Grid */}
-      <div className="absolute inset-0 z-0 opacity-[0.03] dark:opacity-[0.02]"
-        style={{
-          backgroundImage: `linear-gradient(var(--foreground) 1px, transparent 1px), linear-gradient(90deg, var(--foreground) 1px, transparent 1px)`,
-          backgroundSize: '40px 40px'
-        }}
-      />
-      {/* Live constellation field — the whole scene reacts to the cursor, not just the panel */}
-      <div className="absolute inset-0 z-0">
+    <section ref={sectionRef} className="relative min-h-screen pt-32 pb-44 md:pb-16 overflow-hidden flex flex-col justify-center">
+      {/* Background layer: grid + particle field drift slower than the page scroll, for depth */}
+      <motion.div className="absolute inset-0 z-0" style={reducedMotion ? undefined : { y: bgY }}>
+        {/* Immersive Architectural Grid */}
+        <div className="absolute inset-0 opacity-[0.03] dark:opacity-[0.02]"
+          style={{
+            backgroundImage: `linear-gradient(var(--foreground) 1px, transparent 1px), linear-gradient(90deg, var(--foreground) 1px, transparent 1px)`,
+            backgroundSize: '40px 40px'
+          }}
+        />
+        {/* Live constellation field — the whole scene reacts to the cursor, not just the panel */}
         <HeroField />
-      </div>
+      </motion.div>
 
       <div className="container mx-auto px-6 relative z-10 flex flex-col lg:flex-row items-center justify-between">
 
-        {/* Left Side: Typography */}
+        {/* Left Side: Typography — scroll layer wraps the (unrelated) entrance-animation layer */}
+        <motion.div style={reducedMotion ? undefined : { y: textY, opacity: textOpacity }} className="lg:w-1/2 mb-12 lg:mb-0 w-full">
         <motion.div
           variants={containerVariants}
           initial="hidden"
           animate={shouldAnimate ? "visible" : "hidden"}
-          className="lg:w-1/2 mb-12 lg:mb-0 w-full"
+          className="w-full"
         >
           <motion.p
             variants={itemVariants}
@@ -123,8 +138,10 @@ export default function Hero() {
             </a>
           </motion.div>
         </motion.div>
+        </motion.div>
 
-        {/* Right Side: Live Studio Panel */}
+        {/* Right Side: Live Studio Panel — scroll layer wraps the entrance-animation layer */}
+        <motion.div style={reducedMotion ? undefined : { y: panelY, scale: panelScale, opacity: panelOpacity }} className="lg:w-1/2 w-full">
         <motion.div
           initial={{ opacity: 0, scale: 0.9 }}
           animate={shouldAnimate ? { opacity: 1, scale: 1 } : { opacity: 0, scale: 0.9 }}
@@ -133,7 +150,7 @@ export default function Hero() {
             delay: reducedMotion ? 0 : 0.35,
             ease: [0.22, 1, 0.36, 1] as const,
           }}
-          className="lg:w-1/2 relative h-[350px] md:h-[460px] flex items-center justify-center w-full"
+          className="relative h-[350px] md:h-[460px] flex items-center justify-center w-full"
         >
           {/* Energy Rings */}
           <div className="absolute w-[280px] h-[280px] md:w-[400px] md:h-[400px] rounded-full border border-glass-border opacity-50 shadow-[0_0_50px_rgba(196,240,66,0.05)]" />
@@ -214,7 +231,26 @@ export default function Hero() {
             performance.optimize();
           </motion.div>
         </motion.div>
+        </motion.div>
       </div>
+
+      {/* Scroll invitation — fades out as soon as the visitor starts scrolling */}
+      {!reducedMotion && (
+        <motion.div
+          style={{ opacity: scrollCueOpacity }}
+          className="absolute bottom-24 md:bottom-28 left-1/2 -translate-x-1/2 z-10 flex flex-col items-center gap-2 pointer-events-none"
+        >
+          <span className="font-mono text-[10px] text-muted uppercase tracking-widest">Scroll to explore</span>
+          <span className="relative flex h-9 w-5 items-start justify-center rounded-full border border-glass-border p-1.5">
+            <motion.span
+              animate={{ y: [0, 14, 0], opacity: [1, 0.2, 1] }}
+              transition={{ duration: 1.8, repeat: Infinity, ease: "easeInOut" }}
+              className="h-1.5 w-1.5 rounded-full bg-accent"
+            />
+          </span>
+          <ChevronDown size={14} className="text-muted -mt-1" aria-hidden />
+        </motion.div>
+      )}
     </section>
   );
 }
