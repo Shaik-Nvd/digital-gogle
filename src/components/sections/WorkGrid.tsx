@@ -1,12 +1,14 @@
 "use client";
 
-import { motion, useAnimationFrame, useMotionValue, useReducedMotion } from "framer-motion";
+import { animate, motion, useAnimationFrame, useMotionValue, useReducedMotion, type PanInfo } from "framer-motion";
 import { ArrowUpRight } from "lucide-react";
 import Image from "next/image";
-import { useRef, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { projects } from "@/lib/projects";
 
-const SCROLL_SPEED = 56; // px/second
+const SCROLL_SPEED = 56; // px/second, auto-advance speed while idle
+const RESUME_DELAY = 2200; // ms of stillness after a manual swipe before auto-advance resumes
+const CLICK_DRAG_THRESHOLD = 6; // px of movement past which a "click" is really a swipe
 
 export default function WorkGrid() {
   const trackRef = useRef<HTMLDivElement>(null);
@@ -14,15 +16,76 @@ export default function WorkGrid() {
   const [isPaused, setIsPaused] = useState(false);
   const [imageErrors, setImageErrors] = useState<Record<number, boolean>>({});
   const prefersReducedMotion = useReducedMotion();
+  const isDraggingRef = useRef(false);
+  const dragDistanceRef = useRef(0);
+  const resumeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const loopWidth = () => (trackRef.current ? trackRef.current.scrollWidth / 2 : 0);
+
+  /** Distance between two consecutive cards (width + gap), measured live so it tracks each breakpoint. */
+  const cardUnit = () => {
+    const track = trackRef.current;
+    if (!track || track.children.length < 2) return 0;
+    const a = track.children[0] as HTMLElement;
+    const b = track.children[1] as HTMLElement;
+    return b.offsetLeft - a.offsetLeft;
+  };
+
+  /** Keeps x inside a single loop's width so the seam between the two duplicated sets never shows. */
+  const wrap = useCallback((value: number) => {
+    const width = loopWidth();
+    if (!width) return value;
+    let next = value;
+    while (next <= -width) next += width;
+    while (next > 0) next -= width;
+    return next;
+  }, []);
 
   useAnimationFrame((_, delta) => {
-    if (isPaused || prefersReducedMotion) return;
-    const loopWidth = trackRef.current ? trackRef.current.scrollWidth / 2 : 0;
-    if (!loopWidth) return;
+    if (isPaused || isDraggingRef.current || prefersReducedMotion) return;
+    const width = loopWidth();
+    if (!width) return;
     let next = x.get() - (SCROLL_SPEED * delta) / 1000;
-    if (next <= -loopWidth) next += loopWidth;
+    if (next <= -width) next += width;
     x.set(next);
   });
+
+  const scheduleResume = useCallback(() => {
+    if (resumeTimerRef.current) clearTimeout(resumeTimerRef.current);
+    resumeTimerRef.current = setTimeout(() => setIsPaused(false), RESUME_DELAY);
+  }, []);
+
+  const handleDragStart = useCallback(() => {
+    isDraggingRef.current = true;
+    setIsPaused(true);
+    if (resumeTimerRef.current) clearTimeout(resumeTimerRef.current);
+  }, []);
+
+  const handleDragEnd = useCallback((_event: PointerEvent | MouseEvent | TouchEvent, info: PanInfo) => {
+    isDraggingRef.current = false;
+    dragDistanceRef.current = Math.abs(info.offset.x);
+
+    // Snap to the nearest card so a swipe lands cleanly on one project instead of half-between two,
+    // carrying a little of the release velocity so a fast flick reaches one card further.
+    const unit = cardUnit();
+    if (unit > 0) {
+      const projected = x.get() + info.velocity.x * 0.12;
+      const target = wrap(Math.round(projected / unit) * unit);
+      x.stop();
+      animate(x, target, { type: "spring", stiffness: 260, damping: 30 });
+    } else {
+      x.set(wrap(x.get()));
+    }
+    scheduleResume();
+  }, [scheduleResume, wrap, x]);
+
+  /** A card that was actually swiped shouldn't also navigate — only a near-stationary tap should. */
+  const guardClick = (event: React.MouseEvent) => {
+    if (dragDistanceRef.current > CLICK_DRAG_THRESHOLD) {
+      event.preventDefault();
+    }
+    dragDistanceRef.current = 0;
+  };
 
   return (
     <section id="work" className="py-24 md:py-32 relative z-10">
@@ -48,7 +111,11 @@ export default function WorkGrid() {
         <motion.div
           ref={trackRef}
           style={{ x }}
-          className="flex whitespace-nowrap gap-6 md:gap-10 px-4"
+          drag={prefersReducedMotion ? false : "x"}
+          dragMomentum={false}
+          onDragStart={handleDragStart}
+          onDragEnd={handleDragEnd}
+          className="flex whitespace-nowrap gap-6 md:gap-10 px-4 cursor-grab active:cursor-grabbing touch-pan-y"
         >
           {[...projects, ...projects].map((project, index) => (
             <motion.a
@@ -56,6 +123,7 @@ export default function WorkGrid() {
               href={project.url}
               target="_blank"
               rel="noopener noreferrer"
+              onClick={guardClick}
               whileHover={{ y: -10 }}
               whileTap={{ y: -4 }}
               transition={{ type: "spring", stiffness: 320, damping: 26 }}

@@ -1,8 +1,14 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { motion } from "framer-motion";
+import { useEffect, useState, type MouseEvent } from "react";
+import { motion, useMotionValue, useSpring } from "framer-motion";
+import { Bot } from "lucide-react";
 import { useLoading } from "@/components/providers/LoadingProvider";
+import { services } from "@/lib/services";
+import HeroField from "./HeroField";
+
+const PROCESS_STEPS = ["Discover", "Design", "Develop", "Distribute", "Deliver"];
+const PULSE_HEIGHTS = [45, 80, 55, 95, 65, 35];
 
 export default function Hero() {
   const { isLoading } = useLoading();
@@ -35,17 +41,39 @@ export default function Hero() {
     },
   };
 
+  // A light tilt on the studio panel, following the cursor — off for touch/reduced-motion visitors,
+  // who never fire mousemove here anyway. Motion values so the tilt doesn't trigger React renders.
+  const rotateX = useMotionValue(0);
+  const rotateY = useMotionValue(0);
+  const springX = useSpring(rotateX, { stiffness: 150, damping: 16 });
+  const springY = useSpring(rotateY, { stiffness: 150, damping: 16 });
+  const handlePanelMove = (event: MouseEvent<HTMLDivElement>) => {
+    if (reducedMotion) return;
+    const rect = event.currentTarget.getBoundingClientRect();
+    rotateY.set(((event.clientX - rect.left) / rect.width - 0.5) * 14);
+    rotateX.set(((event.clientY - rect.top) / rect.height - 0.5) * -14);
+  };
+  const resetPanel = () => {
+    rotateX.set(0);
+    rotateY.set(0);
+  };
+
   return (
     <section className="relative min-h-screen pt-32 pb-44 md:pb-16 overflow-hidden flex flex-col justify-center">
       {/* Immersive Architectural Grid */}
-      <div className="absolute inset-0 z-0 opacity-[0.03] dark:opacity-[0.02]" 
+      <div className="absolute inset-0 z-0 opacity-[0.03] dark:opacity-[0.02]"
         style={{
           backgroundImage: `linear-gradient(var(--foreground) 1px, transparent 1px), linear-gradient(90deg, var(--foreground) 1px, transparent 1px)`,
           backgroundSize: '40px 40px'
-        }} 
+        }}
       />
+      {/* Live constellation field — the whole scene reacts to the cursor, not just the panel */}
+      <div className="absolute inset-0 z-0">
+        <HeroField />
+      </div>
+
       <div className="container mx-auto px-6 relative z-10 flex flex-col lg:flex-row items-center justify-between">
-        
+
         {/* Left Side: Typography */}
         <motion.div
           variants={containerVariants}
@@ -53,6 +81,17 @@ export default function Hero() {
           animate={shouldAnimate ? "visible" : "hidden"}
           className="lg:w-1/2 mb-12 lg:mb-0 w-full"
         >
+          <motion.p
+            variants={itemVariants}
+            className="text-sm font-mono text-accent mb-4 tracking-widest uppercase flex items-center gap-2"
+          >
+            <span className="relative flex h-1.5 w-1.5">
+              <span className="absolute inline-flex h-full w-full rounded-full bg-accent opacity-75 motion-safe:animate-ping" />
+              <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-accent" />
+            </span>
+            00 / STUDIO — BANGALORE, LIVE
+          </motion.p>
+
           <motion.h1
             variants={itemVariants}
             className="text-5xl md:text-7xl font-bold tracking-tight leading-[1.1] md:leading-[1.15] mb-6"
@@ -85,7 +124,7 @@ export default function Hero() {
           </motion.div>
         </motion.div>
 
-        {/* Right Side: 3D Lab */}
+        {/* Right Side: Live Studio Panel */}
         <motion.div
           initial={{ opacity: 0, scale: 0.9 }}
           animate={shouldAnimate ? { opacity: 1, scale: 1 } : { opacity: 0, scale: 0.9 }}
@@ -94,50 +133,83 @@ export default function Hero() {
             delay: reducedMotion ? 0 : 0.35,
             ease: [0.22, 1, 0.36, 1] as const,
           }}
-          className="lg:w-1/2 relative h-[350px] md:h-[500px] flex items-center justify-center code-cube-container w-full"
+          className="lg:w-1/2 relative h-[350px] md:h-[460px] flex items-center justify-center w-full"
         >
           {/* Energy Rings */}
           <div className="absolute w-[280px] h-[280px] md:w-[400px] md:h-[400px] rounded-full border border-glass-border opacity-50 shadow-[0_0_50px_rgba(196,240,66,0.05)]" />
           <div className="absolute w-[350px] h-[350px] md:w-[500px] md:h-[500px] rounded-full border border-glass-border opacity-20" />
 
-          {/* 3D Cube */}
-          <div className="code-cube scale-75 md:scale-100">
-            <div className="cube-face face-front">&lt;/&gt;</div>
-            <div className="cube-face face-back">JS</div>
-            <div className="cube-face face-right">API</div>
-            <div className="cube-face face-left">CSS</div>
-            <div className="cube-face face-top">UI</div>
-            <div className="cube-face face-bottom">DB</div>
-          </div>
+          <motion.div
+            onMouseMove={handlePanelMove}
+            onMouseLeave={resetPanel}
+            style={{ rotateX: springX, rotateY: springY, transformPerspective: 900 }}
+            className="glass-panel relative z-10 w-full max-w-[340px] rounded-3xl p-6 md:p-7 mx-6"
+          >
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-2">
+                <span className="relative flex h-2 w-2">
+                  <span className="absolute inline-flex h-full w-full rounded-full bg-accent opacity-75 motion-safe:animate-ping" />
+                  <span className="relative inline-flex h-2 w-2 rounded-full bg-accent" />
+                </span>
+                <span className="font-mono text-xs text-foreground">Gogle is online</span>
+              </div>
+              <Bot size={16} className="text-accent" aria-hidden />
+            </div>
 
-          {/* Orbit 1 */}
-          <div className="absolute inset-0 flex items-center justify-center scale-75 md:scale-100">
-            <div className="orbit-item" style={{ animation: "orbit 10s linear infinite" }}>HTML</div>
-            <div className="orbit-item" style={{ animation: "orbit 10s linear infinite", animationDelay: "-2.5s" }}>{`{JS}`}</div>
-            <div className="orbit-item" style={{ animation: "orbit 10s linear infinite", animationDelay: "-5s" }}>#CSS</div>
-            <div className="orbit-item" style={{ animation: "orbit 10s linear infinite", animationDelay: "-7.5s" }}>API</div>
-          </div>
+            <div className="grid grid-cols-2 gap-4 mb-6">
+              <div>
+                <p className="text-3xl font-bold tracking-tight">{services.length}</p>
+                <p className="text-[11px] text-muted font-mono uppercase tracking-wide">Core services</p>
+              </div>
+              <div>
+                <p className="text-3xl font-bold tracking-tight">{PROCESS_STEPS.length}</p>
+                <p className="text-[11px] text-muted font-mono uppercase tracking-wide">Step process</p>
+              </div>
+            </div>
 
-          {/* Orbit 2 */}
-          <div className="absolute inset-0 flex items-center justify-center scale-75 md:scale-100">
-            <div className="orbit-item" style={{ animation: "orbitReverse 15s linear infinite" }}>UX</div>
-            <div className="orbit-item" style={{ animation: "orbitReverse 15s linear infinite", animationDelay: "-3.75s" }}>DB</div>
-            <div className="orbit-item" style={{ animation: "orbitReverse 15s linear infinite", animationDelay: "-7.5s" }}>SEO</div>
-            <div className="orbit-item" style={{ animation: "orbitReverse 15s linear infinite", animationDelay: "-11.25s" }}>3D</div>
-          </div>
+            <div className="space-y-2 mb-6">
+              {PROCESS_STEPS.map((step, index) => (
+                <div key={step} className="flex items-center gap-3">
+                  <span className="font-mono text-[10px] text-muted w-4 shrink-0">{String(index + 1).padStart(2, "0")}</span>
+                  <div className="h-1 flex-1 rounded-full bg-glass-border overflow-hidden">
+                    <motion.div
+                      className="h-full bg-accent origin-left"
+                      initial={{ scaleX: 0 }}
+                      animate={shouldAnimate ? { scaleX: 1 } : { scaleX: 0 }}
+                      transition={{ duration: reducedMotion ? 0.01 : 0.6, delay: reducedMotion ? 0 : 0.7 + index * 0.08 }}
+                    />
+                  </div>
+                  <span className="font-mono text-[10px] text-muted shrink-0">{step}</span>
+                </div>
+              ))}
+            </div>
+
+            <div className="flex items-end gap-1 h-8" aria-hidden>
+              {PULSE_HEIGHTS.map((height, index) => (
+                <motion.span
+                  key={index}
+                  className="flex-1 rounded-sm bg-accent/70"
+                  style={{ height: `${height}%` }}
+                  animate={reducedMotion ? undefined : { height: [`${height}%`, `${100 - height}%`, `${height}%`] }}
+                  transition={{ duration: 1.4 + index * 0.15, repeat: Infinity, ease: "easeInOut" }}
+                />
+              ))}
+            </div>
+            <p className="mt-2 font-mono text-[10px] text-muted uppercase tracking-wide">Always building, always listening</p>
+          </motion.div>
 
           {/* Floating Pseudo Code */}
           <motion.div
             animate={{ y: [-5, 5, -5] }}
             transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-            className="absolute top-4 right-4 md:top-10 md:right-10 glass-panel px-3 py-1 font-mono text-[10px] md:text-xs text-accent rounded backdrop-blur-md"
+            className="absolute top-4 right-4 md:top-6 md:right-6 glass-panel px-3 py-1 font-mono text-[10px] md:text-xs text-accent rounded backdrop-blur-md"
           >
             const idea = build(impact);
           </motion.div>
           <motion.div
             animate={{ y: [5, -5, 5] }}
             transition={{ duration: 5, repeat: Infinity, ease: "easeInOut", delay: 1 }}
-            className="absolute bottom-4 left-4 md:bottom-10 md:left-10 glass-panel px-3 py-1 font-mono text-[10px] md:text-xs text-accent rounded backdrop-blur-md"
+            className="absolute bottom-4 left-4 md:bottom-6 md:left-6 glass-panel px-3 py-1 font-mono text-[10px] md:text-xs text-accent rounded backdrop-blur-md"
           >
             performance.optimize();
           </motion.div>
