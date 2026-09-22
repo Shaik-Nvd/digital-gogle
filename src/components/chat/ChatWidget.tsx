@@ -114,7 +114,7 @@ export default function ChatWidget() {
   const isMin = minimized && !mobile;
   const { nudge, dismiss: dismissNudge, consume: consumeNudge } = useProactiveNudge(context, !open);
   const { isSpeaking, isLoadingAudio, enqueue, finish, cancel: cancelAudio, prime } = speech;
-  const { isListening, isTranscribing, error: voiceError, analyser, start: startVoice, stop: stopVoice, cancel: cancelVoice } = voice;
+  const { isStarting, isListening, isTranscribing, error: voiceError, analyser, start: startVoice, stop: stopVoice, cancel: cancelVoice } = voice;
 
   const setHistory = useCallback((change: (old: Message[]) => Message[]) => {
     setMessages((old) => {
@@ -364,6 +364,12 @@ export default function ChatWidget() {
       stopVoice();
       return;
     }
+    if (isStarting) {
+      // A second press while the mic is still opening (permission prompt, slow device) reads as
+      // "cancel", not "start again" — starting it twice raced two getUserMedia calls.
+      cancelVoice();
+      return;
+    }
     cancelAll(); // barge-in: talking over the assistant stops it
     prime(); // this tap is the user gesture that unlocks audio for the spoken reply
     setVoiceUsed(true);
@@ -385,12 +391,14 @@ export default function ChatWidget() {
     setOpen(true);
   };
 
-  const active = isListening || isTranscribing || isSpeaking || isLoadingAudio || Boolean(streaming);
-  const status = isListening
-    ? "Listening… tap the mic when you're done"
-    : isTranscribing
-      ? "Transcribing…"
-      : isSpeaking
+  const active = isStarting || isListening || isTranscribing || isSpeaking || isLoadingAudio || Boolean(streaming);
+  const status = isStarting
+    ? "Opening the mic…"
+    : isListening
+      ? "Listening… tap the mic when you're done"
+      : isTranscribing
+        ? "Transcribing…"
+        : isSpeaking
         ? "Speaking — tap stop to interrupt"
         : streaming || isLoadingAudio
           ? "Thinking it through"
@@ -601,11 +609,13 @@ export default function ChatWidget() {
                     </div>
                   )}
 
-                  {(isListening || isTranscribing) && (
+                  {(isStarting || isListening || isTranscribing) && (
                     <div className="mx-3 mb-2 flex items-center gap-3 rounded-xl border border-accent/30 bg-accent/5 px-3 py-2">
                       {isListening ? <VoiceMeter analyser={analyser} /> : <Loader2 size={18} className="animate-spin text-accent" aria-hidden />}
-                      <span className="min-w-0 flex-1 truncate font-mono text-[11px] text-muted">{isListening ? "Listening… I'll stop when you pause" : "Transcribing what you said…"}</span>
-                      {isListening && (
+                      <span className="min-w-0 flex-1 truncate font-mono text-[11px] text-muted">
+                        {isStarting ? "Opening the mic…" : isListening ? "Listening… I'll stop when you pause" : "Transcribing what you said…"}
+                      </span>
+                      {(isStarting || isListening) && (
                         <button type="button" onClick={cancelVoice} aria-label="Cancel recording" className="grid h-9 w-9 place-items-center rounded-lg text-muted hover:text-foreground">
                           <X size={15} />
                         </button>
@@ -624,13 +634,13 @@ export default function ChatWidget() {
                       type="button"
                       onClick={handleMic}
                       disabled={!voice.isSupported || isTranscribing}
-                      aria-label={isListening ? "Stop listening and send" : "Talk to Gogle"}
-                      aria-pressed={isListening}
+                      aria-label={isListening ? "Stop listening and send" : isStarting ? "Opening the microphone" : "Talk to Gogle"}
+                      aria-pressed={isListening || isStarting}
                       className={`grid h-11 w-11 shrink-0 place-items-center rounded-xl border transition-colors disabled:opacity-50 ${
-                        isListening ? "border-accent bg-accent text-black" : "border-glass-border text-muted hover:border-accent hover:text-accent"
+                        isListening || isStarting ? "border-accent bg-accent text-black" : "border-glass-border text-muted hover:border-accent hover:text-accent"
                       }`}
                     >
-                      {voice.isSupported ? <Mic size={18} /> : <MicOff size={18} />}
+                      {!voice.isSupported ? <MicOff size={18} /> : isStarting ? <Loader2 size={18} className="animate-spin" aria-hidden /> : <Mic size={18} />}
                     </button>
                     <textarea
                       ref={area}

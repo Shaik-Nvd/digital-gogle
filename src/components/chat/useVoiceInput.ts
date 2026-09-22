@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
 
-type Phase = "idle" | "listening" | "transcribing";
+type Phase = "idle" | "starting" | "listening" | "transcribing";
 type Session = { stop: () => void; cancel: () => void };
 
 const SPEECH_LEVEL = 0.018; // RMS above this counts as the visitor speaking
@@ -34,10 +34,14 @@ export function useVoiceInput() {
   const [analyser, setAnalyser] = useState<AnalyserNode | null>(null);
   const sessionRef = useRef<Session | null>(null);
   const requestRef = useRef<AbortController | null>(null);
+  // Bumped on every cancel(); a start() whose permission prompt is still pending when that
+  // happens checks this to know it was abandoned, rather than starting a session nobody wants.
+  const generationRef = useRef(0);
 
   const stop = useCallback(() => sessionRef.current?.stop(), []);
 
   const cancel = useCallback(() => {
+    generationRef.current += 1;
     sessionRef.current?.cancel();
     requestRef.current?.abort();
     requestRef.current = null;
@@ -46,7 +50,12 @@ export function useVoiceInput() {
 
   const start = useCallback(async (onTranscript: (text: string, language: string | null) => void) => {
     if (sessionRef.current) return;
+    const generation = (generationRef.current += 1);
     setError(null);
+    // Feedback the instant the button is pressed — getUserMedia can take a while (the browser's
+    // own permission prompt on first use, or just device startup), and with nothing shown during
+    // that gap the mic looked unresponsive and people pressed it again.
+    setPhase("starting");
 
     let stream: MediaStream;
     try {
@@ -54,8 +63,16 @@ export function useVoiceInput() {
         audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
       });
     } catch (cause) {
+      if (generation !== generationRef.current) return; // abandoned (panel closed, etc.) while waiting
+      setPhase("idle");
       const denied = (cause as DOMException).name === "NotAllowedError";
       setError(denied ? "Microphone access is blocked. Allow it in your browser to talk to me." : "I couldn't find a microphone.");
+      return;
+    }
+    if (generation !== generationRef.current) {
+      // The visitor cancelled while the permission prompt was open; the mic only just unlocked,
+      // so release it immediately instead of silently recording into a session nobody is using.
+      stream.getTracks().forEach((track) => track.stop());
       return;
     }
 
@@ -144,5 +161,15 @@ export function useVoiceInput() {
 
   useEffect(() => cancel, [cancel]);
 
-  return { isSupported, isListening: phase === "listening", isTranscribing: phase === "transcribing", error, analyser, start, stop, cancel };
+  return {
+    isSupported,
+    isStarting: phase === "starting",
+    isListening: phase === "listening",
+    isTranscribing: phase === "transcribing",
+    error,
+    analyser,
+    start,
+    stop,
+    cancel,
+  };
 }
