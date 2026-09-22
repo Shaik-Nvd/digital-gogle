@@ -253,7 +253,40 @@ export default function ChatWidget() {
     abort.current = controller;
     // Only spoken when the visitor spoke: typed messages always get a silent reply.
     const speakIt = mode === "voice" && !muted;
-    const chunker = speakIt ? createSpeechChunker(enqueue) : null;
+    let raw = "";
+
+    // In voice mode the text used to render as fast as tokens streamed in, seconds before any
+    // sound played — the bubble looked "done" while the visitor was still waiting to hear it.
+    // Now the bubble stays a typing indicator until the first clip actually starts playing
+    // (or, if voice never starts — muted, unreadable script, a TTS failure — until the reply
+    // finishes), so what's on screen and what's coming out of the speaker stay in step.
+    let revealed = !speakIt;
+    let revealTimer: ReturnType<typeof setTimeout> | null = null;
+    const reveal = () => {
+      if (revealed) return;
+      revealed = true;
+      if (revealTimer) {
+        clearTimeout(revealTimer);
+        revealTimer = null;
+      }
+      const shown = mode === "voice" ? stripSpeechTags(raw) : raw;
+      setHistory((old) => old.map((item) => (item.id === assistant.id ? { ...item, content: shown } : item)));
+    };
+    let firstChunkQueued = false;
+    const chunker = speakIt
+      ? createSpeechChunker((chunk) => {
+          if (firstChunkQueued) {
+            enqueue(chunk);
+          } else {
+            firstChunkQueued = true;
+            // Text and voice must not race: reveal only when this clip actually starts playing.
+            // The timer is a pure failure fallback (TTS error, autoplay blocked) so a broken
+            // voice pipeline never leaves the reply hidden — it does not fire in the normal case.
+            enqueue(chunk, reveal);
+            revealTimer = setTimeout(reveal, 6000);
+          }
+        })
+      : null;
 
     try {
       const response = await fetch("/api/chat", {
@@ -270,20 +303,24 @@ export default function ChatWidget() {
 
       const reader = response.body.getReader();
       const decoder = new TextDecoder();
-      let raw = "";
       while (true) {
         const { done, value: chunk } = await reader.read();
         if (done) break;
         raw += decoder.decode(chunk, { stream: true });
-        const shown = mode === "voice" ? stripSpeechTags(raw) : raw;
-        setHistory((old) => old.map((item) => (item.id === assistant.id ? { ...item, content: shown } : item)));
+        if (revealed) {
+          const shown = mode === "voice" ? stripSpeechTags(raw) : raw;
+          setHistory((old) => old.map((item) => (item.id === assistant.id ? { ...item, content: shown } : item)));
+        }
         chunker?.update(raw);
       }
       chunker?.update(raw, true);
       if (speakIt) finish();
+      // Nothing was ever queued (e.g. an empty reply): nothing will call reveal(), so do it now.
+      if (!firstChunkQueued) reveal();
       const finalText = mode === "voice" ? stripSpeechTags(raw) : raw;
       recordLead([...next, { ...assistant, content: finalText }]);
     } catch (cause) {
+      if (revealTimer) clearTimeout(revealTimer);
       if ((cause as Error).name === "AbortError") return;
       console.error("Chat request failed", cause);
       cancelAudio();

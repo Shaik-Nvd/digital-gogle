@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 
-type QueueItem = { audio: Promise<Blob | null> };
+type QueueItem = { audio: Promise<Blob | null>; onStart?: () => void };
 
 // 0.1s of silence; playing it inside a user gesture unlocks the audio element for later replies.
 const SILENCE =
@@ -76,6 +76,7 @@ export function useFishAudio() {
           () => {
             setIsLoadingAudio(false);
             setIsSpeaking(true);
+            item.onStart?.();
           },
           () => resolve(false),
         );
@@ -92,8 +93,12 @@ export function useFishAudio() {
     if (endedRef.current) setIsSpeaking(false);
   }, [ensureAudio]);
 
-  /** Add one chunk of a reply. Starts speaking immediately if nothing is playing. */
-  const enqueue = useCallback((text: string) => {
+  /**
+   * Add one chunk of a reply. Starts speaking immediately if nothing is playing.
+   * `onStart`, if given, fires once this specific clip actually begins playing —
+   * used to sync something else (like revealing the on-screen text) to the voice.
+   */
+  const enqueue = useCallback((text: string, onStart?: () => void) => {
     ensureAudio();
     if (endedRef.current) {
       // First chunk of a new reply: start from a clean slate.
@@ -113,7 +118,7 @@ export function useFishAudio() {
         if ((error as Error).name !== "AbortError") console.error("Voice request failed", error);
         return null;
       });
-    queueRef.current.push({ audio });
+    queueRef.current.push({ audio, onStart });
     if (!playingRef.current) setIsLoadingAudio(true);
     void drain(generation);
   }, [cancel, drain, ensureAudio]);

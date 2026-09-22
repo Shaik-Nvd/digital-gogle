@@ -1,5 +1,6 @@
 import type { ChatContext, ChatSection } from "./chat-context";
 import { projects } from "./projects";
+import { services } from "./services";
 import { SPEECH_TAGS } from "./speech-tags";
 
 export type ChatInputMode = "text" | "voice";
@@ -13,15 +14,11 @@ const SECTION_NAMES: Record<ChatSection, string> = {
   contact: "the Contact section",
 };
 
-const SERVICES = [
-  "Cybersecurity & Security Testing: website and web app security, vulnerability scanning, penetration testing, mobile/API/infrastructure/cloud security testing",
-  "AI Agents & Intelligent Automation: custom AI agents and chatbots trained on the client's own knowledge, RAG solutions, AI business automation, custom LLM solutions",
-  "Website & Software Development: business websites, e-commerce, CRM and business software, enterprise software, custom web apps",
-  "Mobile App Development: Android and iOS apps and custom business apps",
-  "Web Data & Automation: web scraping, data extraction and processing, API integration, data automation",
-  "Lead Generation & Digital Marketing: lead generation, SEO, social media, email marketing, online ads, digital outreach",
-  "Video Editing & Content Creation: promo videos, reels and short-form, marketing and brand videos",
-];
+// Pulled straight from the Services section, so the assistant's pitch always matches what the
+// page says. `tags` are the capability keywords a visitor might name (e.g. "CRM", "penetration testing").
+const SERVICES = services.map(
+  (service) => `- ${service.tags[0]}: ${service.description}${service.expandedExtra ? ` ${service.expandedExtra}` : ""} Also covers: ${service.tags.slice(1).join(", ")}.`,
+);
 
 function contextFacts(context: ChatContext | undefined): string {
   if (!context) return "No page context is available.";
