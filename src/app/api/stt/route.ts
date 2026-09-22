@@ -31,26 +31,42 @@ export async function POST(request: Request) {
     return new Response("Invalid request.", { status: 400 });
   }
 
-  // No `language` on purpose: Whisper detects it, so Hindi, Spanish and English all just work.
-  const upstreamForm = new FormData();
-  upstreamForm.set("file", audio, audio.name || "voice.webm");
-  upstreamForm.set("model", MODEL);
-  upstreamForm.set("response_format", "verbose_json");
-  upstreamForm.set("temperature", "0");
-  upstreamForm.set("prompt", VOCABULARY);
-
-  try {
-    const upstream = await fetch(GROQ_TRANSCRIBE, {
+  async function transcribe(languageHint?: string): Promise<Response> {
+    const form = new FormData();
+    form.set("file", audio, audio.name || "voice.webm");
+    form.set("model", MODEL);
+    form.set("response_format", "verbose_json");
+    form.set("temperature", "0");
+    form.set("prompt", VOCABULARY);
+    if (languageHint) form.set("language", languageHint);
+    return fetch(GROQ_TRANSCRIBE, {
       method: "POST",
       headers: { Authorization: `Bearer ${apiKey}` },
-      body: upstreamForm,
+      body: form,
       signal: AbortSignal.timeout(20000),
     });
+  }
+
+  try {
+    // No language hint on the first pass: Whisper auto-detects, and that's what makes Spanish,
+    // Tamil, English, and everything else just work without configuration.
+    const upstream = await transcribe();
     if (!upstream.ok) {
       console.error("Groq transcription failed", { status: upstream.status, detail: (await upstream.text()).slice(0, 500) });
       return new Response(upstream.status === 429 ? "Voice input is busy. Try again in a moment." : "Voice input is temporarily unavailable.", { status: upstream.status === 429 ? 429 : 502 });
     }
-    const result = (await upstream.json()) as Transcription;
+    let result = (await upstream.json()) as Transcription;
+
+    // Hindi and Urdu are close to the same spoken language (Hindustani) in different scripts,
+    // and Whisper's auto-detect frequently mislabels clean Hindi speech as Urdu — confirmed by
+    // feeding this route's own Hindi TTS output back through it. Since the vast majority of this
+    // site's Hindi/Urdu voice traffic is Hindi, and forcing the "hi" language re-decodes the same
+    // audio in Devanagari, re-run just that case rather than ship visibly wrong-script transcripts.
+    if (result.language === "Urdu") {
+      const retry = await transcribe("hi");
+      if (retry.ok) result = (await retry.json()) as Transcription;
+    }
+
     const text = looksLikeSilence(result) ? "" : (result.text ?? "").trim();
     return Response.json({ text, language: result.language ?? null });
   } catch (error) {
