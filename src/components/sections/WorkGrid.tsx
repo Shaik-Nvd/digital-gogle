@@ -1,7 +1,7 @@
 "use client";
 
 import { animate, motion, useAnimationFrame, useMotionValue, useReducedMotion, type PanInfo } from "framer-motion";
-import { ArrowUpRight } from "lucide-react";
+import { ArrowUpRight, ChevronLeft, ChevronRight } from "lucide-react";
 import Image from "next/image";
 import { useCallback, useRef, useState } from "react";
 import { projects } from "@/lib/projects";
@@ -61,23 +61,30 @@ export default function WorkGrid() {
     if (resumeTimerRef.current) clearTimeout(resumeTimerRef.current);
   }, []);
 
+  /** Springs to the nearest card boundary at or around `rawTarget`, wrapped into the loop. */
+  const snapTo = useCallback((rawTarget: number) => {
+    const unit = cardUnit();
+    const target = unit > 0 ? wrap(Math.round(rawTarget / unit) * unit) : wrap(rawTarget);
+    x.stop();
+    animate(x, target, { type: "spring", stiffness: 260, damping: 30 });
+  }, [wrap, x]);
+
   const handleDragEnd = useCallback((_event: PointerEvent | MouseEvent | TouchEvent, info: PanInfo) => {
     isDraggingRef.current = false;
     dragDistanceRef.current = Math.abs(info.offset.x);
-
-    // Snap to the nearest card so a swipe lands cleanly on one project instead of half-between two,
-    // carrying a little of the release velocity so a fast flick reaches one card further.
-    const unit = cardUnit();
-    if (unit > 0) {
-      const projected = x.get() + info.velocity.x * 0.12;
-      const target = wrap(Math.round(projected / unit) * unit);
-      x.stop();
-      animate(x, target, { type: "spring", stiffness: 260, damping: 30 });
-    } else {
-      x.set(wrap(x.get()));
-    }
+    // Carry a little of the release velocity so a fast flick reaches one card further.
+    snapTo(x.get() + info.velocity.x * 0.12);
     scheduleResume();
-  }, [scheduleResume, wrap, x]);
+  }, [scheduleResume, snapTo, x]);
+
+  /** Explicit prev/next control — a manual path that works regardless of drag/touch quirks. */
+  const step = useCallback((direction: -1 | 1) => {
+    setIsPaused(true);
+    if (resumeTimerRef.current) clearTimeout(resumeTimerRef.current);
+    const unit = cardUnit() || 1;
+    snapTo(Math.round(x.get() / unit) * unit - direction * unit);
+    scheduleResume();
+  }, [scheduleResume, snapTo, x]);
 
   /** A card that was actually swiped shouldn't also navigate — only a near-stationary tap should. */
   const guardClick = (event: React.MouseEvent) => {
@@ -183,6 +190,24 @@ export default function WorkGrid() {
             </motion.a>
           ))}
         </motion.div>
+
+        {/* Explicit prev/next — works every time, independent of drag/touch/Lenis quirks. */}
+        <button
+          type="button"
+          onClick={() => step(-1)}
+          aria-label="Previous project"
+          className="absolute left-2 md:left-4 top-1/2 -translate-y-1/2 z-20 grid h-11 w-11 place-items-center rounded-full glass-panel border border-glass-border text-foreground shadow-lg transition hover:border-accent/50 hover:text-accent active:scale-95"
+        >
+          <ChevronLeft size={20} />
+        </button>
+        <button
+          type="button"
+          onClick={() => step(1)}
+          aria-label="Next project"
+          className="absolute right-2 md:right-4 top-1/2 -translate-y-1/2 z-20 grid h-11 w-11 place-items-center rounded-full glass-panel border border-glass-border text-foreground shadow-lg transition hover:border-accent/50 hover:text-accent active:scale-95"
+        >
+          <ChevronRight size={20} />
+        </button>
       </div>
     </section>
   );
