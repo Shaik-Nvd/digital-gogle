@@ -94,6 +94,33 @@ export default function WorkGrid() {
     dragDistanceRef.current = 0;
   };
 
+  // A trackpad two-finger swipe (the natural "swipe" gesture on a laptop, no touch or mouse
+  // button involved) fires wheel events, not pointer events — Framer's `drag` never sees it, and
+  // this was never wired to anything else either, so it silently did nothing. Handle it directly:
+  // move x live while the gesture continues, then snap to the nearest card once it settles.
+  const wheelIdleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const handleWheel = (event: React.WheelEvent<HTMLDivElement>) => {
+    const horizontal = Math.abs(event.deltaX) > Math.abs(event.deltaY);
+    // Shift+wheel is the standard "scroll horizontally" convention for a plain mouse wheel.
+    if (!horizontal && !event.shiftKey) return;
+    event.preventDefault();
+    const delta = horizontal ? event.deltaX : event.deltaY;
+
+    if (!isDraggingRef.current) {
+      isDraggingRef.current = true;
+      setIsPaused(true);
+    }
+    x.stop();
+    x.set(wrap(x.get() - delta));
+
+    if (wheelIdleTimerRef.current) clearTimeout(wheelIdleTimerRef.current);
+    wheelIdleTimerRef.current = setTimeout(() => {
+      isDraggingRef.current = false;
+      snapTo(x.get());
+      scheduleResume();
+    }, 140);
+  };
+
   return (
     <section id="work" className="py-24 md:py-32 relative z-10">
       <div className="container mx-auto px-6 mb-16 md:mb-24">
@@ -113,6 +140,7 @@ export default function WorkGrid() {
         className="relative flex overflow-x-hidden py-4"
         onMouseEnter={() => setIsPaused(true)}
         onMouseLeave={() => setIsPaused(false)}
+        onWheel={handleWheel}
         // Lenis (site-wide smooth scroll) intercepts and preventDefaults any gesture with a
         // vertical component by default — which is nearly every real swipe, since a perfectly
         // horizontal touch move essentially never happens. This tells Lenis to step aside for

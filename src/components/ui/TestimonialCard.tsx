@@ -15,8 +15,8 @@ export type TestimonialCardProps = {
  */
 export default function TestimonialCard({ name, role, testimonial }: TestimonialCardProps): ReactNode {
   return (
-    <div className="group relative overflow-hidden rounded-2xl border border-glass-border bg-glass p-6 md:p-8 transition-all hover:border-accent/30 hover:shadow-[0_20px_50px_-20px_rgba(196,240,66,0.25)]">
-      <span aria-hidden className="absolute right-6 top-4 font-serif text-6xl text-foreground/5 select-none">
+    <div className="group relative overflow-hidden rounded-2xl border border-white/[0.08] bg-white/[0.035] dark:bg-white/[0.045] p-6 md:p-8 shadow-[0_1px_0_0_rgba(255,255,255,0.06)_inset,0_16px_40px_-20px_rgba(0,0,0,0.55)] transition-all hover:border-accent/30 hover:shadow-[0_1px_0_0_rgba(255,255,255,0.08)_inset,0_20px_50px_-20px_rgba(196,240,66,0.25)]">
+      <span aria-hidden className="absolute right-6 top-4 font-serif text-6xl text-foreground/10 select-none">
         &rdquo;
       </span>
 
