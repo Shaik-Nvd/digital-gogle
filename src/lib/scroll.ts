@@ -11,7 +11,9 @@ export function scrollToSection(id: string): boolean {
   const target = document.getElementById(id);
   if (!target) return false;
   const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-  if (lenis) lenis.scrollTo(target, { offset: -72, duration: 1.4, immediate: reduced });
+  // Matches the site's scroll-padding-top (navbar height + breathing room) so a Lenis-driven
+  // jump from the chat widget lands in the same place a native #anchor click would.
+  if (lenis) lenis.scrollTo(target, { offset: -112, duration: 1.4, immediate: reduced });
   else target.scrollIntoView({ behavior: reduced ? "auto" : "smooth", block: "start" });
   return true;
 }

@@ -36,6 +36,16 @@
   --font-mono: var(--font-jetbrains-mono);
 }
 
+html {
+  /* Without this, jumping to a #section (a direct link, browser back/forward, or the nav's own
+     anchor links) lands the section's top exactly at the viewport top — hidden behind the fixed
+     80px navbar, which is translucent enough (glass) that the heading ghosts through it instead
+     of being cleanly hidden. This is the actual cause of headings/chips appearing to overlap the
+     navbar in both the Services and Process sections. 112px = navbar height plus real breathing
+     room, not just a hairline gap. */
+  scroll-padding-top: 7rem;
+}
+
 body {
   background-color: var(--background);
   color: var(--foreground);
