@@ -59,8 +59,13 @@ function Avatar({ active }: { active: boolean }) {
 function TypingDots({ className = "" }: { className?: string }) {
   return (
     <span className={`flex gap-1 py-1 ${className}`} aria-label="Assistant is typing">
-      {[0, 120, 240].map((delay) => (
-        <i key={delay} className="h-1.5 w-1.5 animate-bounce rounded-full bg-accent" style={{ animationDelay: `${delay}ms` }} />
+      {[0, 0.15, 0.3].map((delay) => (
+        <motion.i
+          key={delay}
+          className="h-1.5 w-1.5 rounded-full bg-accent"
+          animate={{ opacity: [0.3, 1, 0.3], scale: [0.85, 1, 0.85] }}
+          transition={{ duration: 1.1, repeat: Infinity, ease: "easeInOut", delay }}
+        />
       ))}
     </span>
   );

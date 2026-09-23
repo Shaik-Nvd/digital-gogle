@@ -130,13 +130,12 @@ export default function Services() {
           className="mb-16 md:mb-24 flex flex-col md:flex-row md:items-end justify-between gap-8 border-b border-glass-border pb-12"
         >
           <div>
-            <p className="text-sm font-mono text-accent mb-4 tracking-widest uppercase">03 / CAPABILITIES</p>
             <h2 className="text-5xl md:text-7xl font-black tracking-tighter">
               Problems we solve for you.
             </h2>
           </div>
           <div className="md:text-right text-muted font-mono text-sm uppercase tracking-wider max-w-xs">
-            Tap a card to see exactly how we fix it.
+            Tap a row to see exactly how we fix it.
           </div>
         </motion.div>
 

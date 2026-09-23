@@ -96,7 +96,6 @@ export default function WorkGrid() {
           viewport={{ once: true, margin: "-100px" }}
           transition={{ duration: 0.6 }}
         >
-          <p className="text-sm font-mono text-accent mb-4">02 / SELECTED WORK</p>
           <h2 className="text-4xl md:text-5xl font-bold tracking-tight">
             Featured Projects
           </h2>
@@ -107,6 +106,11 @@ export default function WorkGrid() {
         className="relative flex overflow-x-hidden py-4"
         onMouseEnter={() => setIsPaused(true)}
         onMouseLeave={() => setIsPaused(false)}
+        // Lenis (site-wide smooth scroll) intercepts and preventDefaults any gesture with a
+        // vertical component by default — which is nearly every real swipe, since a perfectly
+        // horizontal touch move essentially never happens. This tells Lenis to step aside for
+        // horizontal-dominant gestures here so Framer's own drag actually receives them.
+        data-lenis-prevent-horizontal
       >
         <motion.div
           ref={trackRef}

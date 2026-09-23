@@ -1,7 +1,6 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Quote } from "lucide-react";
 
 const testimonials = [
   {
@@ -25,39 +24,33 @@ export default function Testimonials() {
   return (
     <section id="testimonials" className="py-24 md:py-32 relative z-10 overflow-hidden">
       <div className="container mx-auto px-6">
-        <motion.div
+        <motion.h2
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, margin: "-100px" }}
           transition={{ duration: 0.6 }}
-          className="mb-16 md:mb-24 text-center md:text-left"
+          className="text-4xl md:text-6xl font-black tracking-tighter mb-16 md:mb-24 max-w-2xl"
         >
-          <p className="text-sm font-mono text-accent mb-4 tracking-widest uppercase">04 / TESTIMONIALS</p>
-          <h2 className="text-4xl md:text-6xl font-black tracking-tighter">
-            Client Success
-          </h2>
-        </motion.div>
+          What clients say, not what we do.
+        </motion.h2>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8">
+        <div className="max-w-5xl">
           {testimonials.map((t, idx) => (
             <motion.div
               key={idx}
-              initial={{ opacity: 0, y: 30 }}
+              initial={{ opacity: 0, y: 24 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, margin: "-100px" }}
-              transition={{ duration: 0.6, delay: idx * 0.1 }}
-              className="glass-panel p-8 md:p-10 rounded-2xl flex flex-col justify-between"
+              transition={{ duration: 0.6, delay: idx * 0.08 }}
+              className={`flex flex-col md:flex-row md:items-start gap-3 md:gap-10 py-10 md:py-12 border-t border-glass-border ${idx === testimonials.length - 1 ? "border-b" : ""}`}
             >
-              <div>
-                <Quote className="text-accent mb-6 w-10 h-10 opacity-50" />
-                <p className="text-lg md:text-xl font-medium leading-relaxed mb-8">
-                  &ldquo;{t.quote}&rdquo;
-                </p>
-              </div>
-              <div>
-                <p className="font-bold text-lg">{t.author}</p>
+              <div className="md:w-48 shrink-0">
+                <p className="font-bold text-base">{t.author}</p>
                 <p className="text-muted text-sm font-mono mt-1">{t.role}</p>
               </div>
+              <p className="text-xl md:text-2xl font-medium leading-snug tracking-tight max-w-2xl">
+                {t.quote}
+              </p>
             </motion.div>
           ))}
         </div>

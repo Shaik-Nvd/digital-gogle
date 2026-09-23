@@ -1,8 +1,7 @@
 "use client";
 
-import { motion } from "framer-motion";
-import { Compass, PenTool, Settings, Globe, Package } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { motion, useScroll, useTransform } from "framer-motion";
+import { useRef } from "react";
 
 const processSteps = [
   {
@@ -10,146 +9,86 @@ const processSteps = [
     title: "Discover",
     description: "Goals, audience, content and the exact action visitors should take.",
     label: "analyze()",
-    icon: Compass,
   },
   {
     num: "02",
     title: "Design",
     description: "Visual direction, hierarchy, motion language and responsive behaviour.",
     label: "system.compose()",
-    icon: PenTool,
   },
   {
     num: "03",
     title: "Develop",
     description: "Production code, functionality, integrations and device testing.",
     label: "build.test()",
-    icon: Settings,
   },
   {
     num: "04",
     title: "Distribute",
     description: "Deploying across fast edge networks for global reach.",
     label: "edge.deploy()",
-    icon: Globe,
   },
   {
     num: "05",
     title: "Deliver",
     description: "Security checks, performance pass, and final handover.",
     label: "handover.zip",
-    icon: Package,
   },
 ];
 
 export default function Process() {
-  const scrollContainerRef = useRef<HTMLDivElement>(null);
-  const [isPaused, setIsPaused] = useState(false);
-
-  useEffect(() => {
-    if (isPaused) return;
-
-    const interval = setInterval(() => {
-      if (scrollContainerRef.current && window.innerWidth < 1024) {
-        const { scrollLeft, scrollWidth, clientWidth } = scrollContainerRef.current;
-        
-        if (scrollLeft + clientWidth >= scrollWidth - 20) {
-          scrollContainerRef.current.scrollTo({ left: 0, behavior: "smooth" });
-        } else {
-          scrollContainerRef.current.scrollBy({ left: clientWidth * 0.85, behavior: "smooth" });
-        }
-      }
-    }, 3000);
-
-    return () => clearInterval(interval);
-  }, [isPaused]);
+  const railRef = useRef<HTMLDivElement>(null);
+  // The line fills as the rail itself scrolls through view, not on a generic whileInView trigger —
+  // it reads as a pipeline actually running rather than a decoration that plays once and sits still.
+  const { scrollYProgress } = useScroll({ target: railRef, offset: ["start 0.75", "end 0.4"] });
+  const lineScale = useTransform(scrollYProgress, [0, 1], [0, 1]);
 
   return (
     <section id="process" className="py-24 md:py-32 relative z-10 bg-background overflow-hidden">
-      {/* Background Glow */}
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[300px] bg-accent/5 rounded-full blur-[120px] pointer-events-none" />
 
       <div className="container mx-auto px-6 relative z-10">
-        <motion.div
+        <motion.h2
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, margin: "-100px" }}
           transition={{ duration: 0.6 }}
-          className="mb-16 text-center"
+          className="text-4xl md:text-6xl font-black tracking-tighter mb-4 leading-[1.2] md:leading-tight max-w-2xl"
         >
-          <p className="text-sm font-mono text-accent mb-4 tracking-widest uppercase">01 / METHODOLOGY</p>
-          <h2 className="text-4xl md:text-6xl font-black tracking-tighter mb-4 leading-[1.2] md:leading-tight">
-            The <span className="bg-accent text-background px-3 md:px-4 py-1 rounded-sm ml-1 md:ml-2 inline-block whitespace-nowrap mt-2 md:mt-0">5D System</span>
-          </h2>
-          <p className="text-muted text-lg max-w-xl mx-auto">
-            Our engineered pipeline to build scalable digital experiences.
-          </p>
-        </motion.div>
+          Five stages, <span className="bg-accent text-background px-3 md:px-4 py-1 rounded-sm inline-block whitespace-nowrap mt-2 md:mt-0">one engineered pipeline.</span>
+        </motion.h2>
 
-        {/* Horizontal Pipeline */}
-        <div className="relative max-w-7xl mx-auto mt-24">
-          {/* Animated Line */}
-          <div className="absolute top-[4.5rem] left-0 right-0 h-px bg-glass-border hidden lg:block">
-            <motion.div
-              initial={{ width: 0 }}
-              whileInView={{ width: "100%" }}
-              viewport={{ once: true, margin: "-100px" }}
-              transition={{ duration: 1.5, ease: "easeInOut" }}
-              className="h-full bg-accent shadow-[0_0_15px_rgba(196,240,66,1)]"
-            />
-          </div>
+        {/* Timeline: a running line connects each stage — order here is the actual information,
+            not decoration, so it earns the numbering a card grid never would. */}
+        <div ref={railRef} className="relative max-w-5xl mt-20 md:mt-28">
+          <div className="absolute left-[18px] md:left-6 top-2 bottom-2 w-px bg-glass-border" aria-hidden />
+          <motion.div
+            style={{ scaleY: lineScale }}
+            className="absolute left-[18px] md:left-6 top-2 bottom-2 w-px origin-top bg-accent shadow-[0_0_12px_rgba(196,240,66,0.8)]"
+            aria-hidden
+          />
 
-          <div 
-            ref={scrollContainerRef}
-            onMouseEnter={() => setIsPaused(true)}
-            onMouseLeave={() => setIsPaused(false)}
-            onTouchStart={() => setIsPaused(true)}
-            onTouchEnd={() => {
-              // slight delay before resuming auto-scroll after touch
-              setTimeout(() => setIsPaused(false), 2000);
-            }}
-            className="flex overflow-x-auto lg:grid lg:grid-cols-5 gap-4 lg:gap-8 pb-8 lg:pb-0 snap-x snap-mandatory [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] px-6 lg:px-0 -mx-6 lg:mx-0"
-          >
+          <ol className="flex flex-col gap-14 md:gap-16">
             {processSteps.map((step, index) => (
-              <motion.div
+              <motion.li
                 key={step.num}
-                initial={{ opacity: 0, y: 20 }}
+                initial={{ opacity: 0, y: 24 }}
                 whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, margin: "-100px" }}
-                transition={{ duration: 0.6, delay: index * 0.15 }}
-                className="relative flex flex-col group mt-8 lg:mt-0 w-[85vw] md:w-[45vw] lg:w-auto shrink-0 snap-center"
+                viewport={{ once: true, margin: "-120px" }}
+                transition={{ duration: 0.6, delay: index * 0.06, ease: [0.22, 1, 0.36, 1] }}
+                className="relative pl-14 md:pl-24"
               >
-                {/* Timeline Dot for Desktop */}
-                <div className="absolute -top-[1.125rem] left-1/2 -translate-x-1/2 w-4 h-4 rounded-full bg-background border-2 border-accent hidden lg:flex items-center justify-center z-10 transition-transform group-hover:scale-150 shadow-[0_0_10px_rgba(196,240,66,0.5)]">
-                  <div className="w-1.5 h-1.5 bg-accent rounded-full animate-pulse" />
+                <span className="absolute left-0 top-0 grid h-9 w-9 md:h-12 md:w-12 place-items-center rounded-full border border-glass-border bg-background font-mono text-xs md:text-sm text-accent">
+                  {step.num}
+                </span>
+                <div className="flex flex-col md:flex-row md:items-baseline md:gap-8">
+                  <h3 className="text-2xl md:text-3xl font-bold tracking-tight shrink-0 md:w-40">{step.title}</h3>
+                  <p className="text-muted leading-relaxed max-w-xl mt-2 md:mt-0">{step.description}</p>
                 </div>
-
-                <div className="glass-panel p-6 rounded-2xl relative text-center flex flex-col items-center h-full hover:scale-105 transition-transform duration-300 hover:border-accent/50 backdrop-blur-xl border-accent/10 shadow-[0_0_30px_rgba(0,0,0,0.1)] group-hover:shadow-[0_0_30px_rgba(196,240,66,0.1)]">
-                  
-                  {/* Glowing Wireframe-style Icon */}
-                  <div className="w-16 h-16 lg:w-20 lg:h-20 mb-6 flex items-center justify-center relative">
-                    <div className="absolute inset-0 bg-accent/20 blur-xl rounded-full scale-0 group-hover:scale-150 transition-transform duration-500" />
-                    <step.icon 
-                      size={40} 
-                      className="text-accent drop-shadow-[0_0_12px_rgba(196,240,66,0.8)] relative z-10 group-hover:scale-110 transition-transform duration-300 stroke-1 lg:w-12 lg:h-12" 
-                    />
-                    {/* Background wireframe number */}
-                    <span className="absolute -bottom-2 -right-2 text-5xl lg:text-6xl font-black text-white/5 z-0 font-mono select-none pointer-events-none group-hover:text-accent/10 transition-colors">
-                      {step.num}
-                    </span>
-                  </div>
-
-                  <h3 className="text-lg lg:text-xl font-bold mb-3 tracking-wide">{step.title}</h3>
-                  <p className="text-muted text-sm leading-relaxed mb-6 flex-grow">
-                    {step.description}
-                  </p>
-                  <code className="text-[10px] font-mono text-accent bg-accent/10 border border-accent/20 px-3 py-1 rounded w-full">
-                    {step.label}
-                  </code>
-                </div>
-              </motion.div>
+                <code className="mt-4 inline-block font-mono text-[11px] text-accent/80">{step.label}</code>
+              </motion.li>
             ))}
-          </div>
+          </ol>
         </div>
       </div>
     </section>

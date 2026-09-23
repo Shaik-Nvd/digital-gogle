@@ -96,23 +96,12 @@ export default function Hero() {
           animate={shouldAnimate ? "visible" : "hidden"}
           className="w-full"
         >
-          <motion.p
-            variants={itemVariants}
-            className="text-sm font-mono text-accent mb-4 tracking-widest uppercase flex items-center gap-2"
-          >
-            <span className="relative flex h-1.5 w-1.5">
-              <span className="absolute inline-flex h-full w-full rounded-full bg-accent opacity-75 motion-safe:animate-ping" />
-              <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-accent" />
-            </span>
-            00 / STUDIO — BANGALORE, LIVE
-          </motion.p>
-
           <motion.h1
             variants={itemVariants}
             className="text-5xl md:text-7xl font-bold tracking-tight leading-[1.1] md:leading-[1.15] mb-6"
           >
             Is your website <br className="hidden md:block" />
-            <span className="bg-clip-text text-transparent bg-gradient-to-r from-muted to-foreground italic font-light box-decoration-clone py-2">costing you customers?</span>
+            <span className="text-muted italic font-light">costing you customers?</span>
           </motion.h1>
 
           <motion.p variants={itemVariants} className="text-[15px] md:text-lg text-muted mb-10 max-w-xl leading-relaxed">
