@@ -6,7 +6,25 @@ type Particle = { x: number; y: number; vx: number; vy: number; r: number };
 
 const LINK_DISTANCE = 130;
 const CURSOR_RADIUS = 170;
-const ACCENT = "196, 240, 66"; // matches --accent in dark mode; canvas can't read CSS vars cheaply per-frame
+const FALLBACK_ACCENT = "196, 240, 66";
+
+/**
+ * Canvas can't read a CSS custom property per-frame, and the accent is a different, deliberately
+ * darker hex in light mode (`--accent: #84cc16`) than in dark (`#c4f042`) — using the dark value
+ * unconditionally was why this field read as invisible in light mode: a low-alpha version of the
+ * *dark* lime is close to white-on-white against a light background. Read the real one instead.
+ */
+function readAccentRgb(): string {
+  if (typeof window === "undefined") return FALLBACK_ACCENT;
+  const hex = getComputedStyle(document.documentElement).getPropertyValue("--accent").trim();
+  const match = /^#([0-9a-f]{6})$/i.exec(hex);
+  if (!match) return FALLBACK_ACCENT;
+  const value = match[1];
+  const r = parseInt(value.slice(0, 2), 16);
+  const g = parseInt(value.slice(2, 4), 16);
+  const b = parseInt(value.slice(4, 6), 16);
+  return `${r}, ${g}, ${b}`;
+}
 
 /**
  * A quiet constellation of particles behind the hero — connects neighbours with faint lines and
@@ -29,6 +47,7 @@ export default function HeroField() {
     let width = 0;
     let height = 0;
     let particles: Particle[] = [];
+    let accent = readAccentRgb();
     const mouse = { x: -9999, y: -9999 };
 
     const seed = () => {
@@ -53,7 +72,7 @@ export default function HeroField() {
 
     const drawStatic = () => {
       ctx.clearRect(0, 0, width, height);
-      ctx.fillStyle = `rgba(${ACCENT}, 0.35)`;
+      ctx.fillStyle = `rgba(${accent}, 0.5)`;
       for (const p of particles) {
         ctx.beginPath();
         ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
@@ -80,7 +99,7 @@ export default function HeroField() {
           const dy = a.y - b.y;
           const dist = Math.sqrt(dx * dx + dy * dy);
           if (dist > LINK_DISTANCE) continue;
-          ctx.strokeStyle = `rgba(${ACCENT}, ${0.1 * (1 - dist / LINK_DISTANCE)})`;
+          ctx.strokeStyle = `rgba(${accent}, ${0.16 * (1 - dist / LINK_DISTANCE)})`;
           ctx.lineWidth = 1;
           ctx.beginPath();
           ctx.moveTo(a.x, a.y);
@@ -94,12 +113,12 @@ export default function HeroField() {
         const dy = p.y - mouse.y;
         const dist = Math.sqrt(dx * dx + dy * dy);
         const near = dist < CURSOR_RADIUS ? 1 - dist / CURSOR_RADIUS : 0;
-        ctx.fillStyle = `rgba(${ACCENT}, ${0.3 + near * 0.6})`;
+        ctx.fillStyle = `rgba(${accent}, ${0.42 + near * 0.55})`;
         ctx.beginPath();
         ctx.arc(p.x, p.y, p.r + near * 1.2, 0, Math.PI * 2);
         ctx.fill();
         if (near > 0) {
-          ctx.strokeStyle = `rgba(${ACCENT}, ${near * 0.35})`;
+          ctx.strokeStyle = `rgba(${accent}, ${near * 0.4})`;
           ctx.lineWidth = 1;
           ctx.beginPath();
           ctx.moveTo(p.x, p.y);
@@ -164,10 +183,19 @@ export default function HeroField() {
     };
     document.addEventListener("visibilitychange", onVisibility);
 
+    // ThemeToggle flips a class on <html>; re-read the accent when that happens so switching
+    // theme updates the field's color immediately instead of needing a reload.
+    const themeObserver = new MutationObserver(() => {
+      accent = readAccentRgb();
+      if (reduced) drawStatic();
+    });
+    themeObserver.observe(document.documentElement, { attributes: true, attributeFilter: ["class"] });
+
     return () => {
       cancelAnimationFrame(frame);
       cancelAnimationFrame(resizeFrame);
       observer.disconnect();
+      themeObserver.disconnect();
       window.removeEventListener("pointermove", onMove);
       window.removeEventListener("pointerleave", onLeave);
       window.removeEventListener("resize", onResize);

@@ -8,8 +8,9 @@
   --accent: #84cc16; /* Richer neon green for light mode */
   --glass: rgba(255, 255, 255, 0.6);
   --glass-border: rgba(0, 0, 0, 0.08);
-  --bg-gradient: radial-gradient(circle at 15% 50%, rgba(132, 204, 22, 0.12), transparent 35%),
-                 radial-gradient(circle at 85% 30%, rgba(56, 189, 248, 0.08), transparent 35%);
+  --bg-gradient: radial-gradient(circle at 20% 20%, rgba(132, 204, 22, 0.16), transparent 42%),
+                 radial-gradient(circle at 85% 15%, rgba(56, 189, 248, 0.12), transparent 40%),
+                 radial-gradient(circle at 50% 90%, rgba(132, 204, 22, 0.08), transparent 45%);
 }
 
 .dark {
@@ -20,7 +21,8 @@
   --accent: #c4f042;
   --glass: rgba(255, 255, 255, 0.03);
   --glass-border: rgba(255, 255, 255, 0.1);
-  --bg-gradient: radial-gradient(circle at 50% 50%, rgba(196, 240, 66, 0.03), transparent 60%);
+  --bg-gradient: radial-gradient(circle at 50% 50%, rgba(196, 240, 66, 0.07), transparent 45%),
+                 radial-gradient(circle at 80% 20%, rgba(56, 189, 248, 0.05), transparent 40%);
 }
 
 @theme inline {
@@ -62,8 +64,9 @@ body::before {
   width: 200%;
   height: 200%;
   z-index: -1;
-  background: radial-gradient(circle at 50% 50%, rgba(196, 240, 66, 0.07), transparent 45%),
-              radial-gradient(circle at 80% 20%, rgba(56, 189, 248, 0.05), transparent 40%);
+  /* Was hardcoded to the dark-mode glow regardless of theme — light mode's own (more visible,
+     already-designed) gradient below was defined but never actually applied anywhere. */
+  background: var(--bg-gradient);
   animation: aurora 25s infinite ease-in-out;
   pointer-events: none;
 }
