@@ -23,9 +23,6 @@ export default function Navbar() {
           <Link href="/#services" className="hover:text-accent transition-colors">
             Services
           </Link>
-          <Link href="/pricing" className="hover:text-accent transition-colors">
-            Pricing
-          </Link>
           <Link href="/#process" className="hover:text-accent transition-colors">
             Process
           </Link>
@@ -67,9 +64,6 @@ export default function Navbar() {
             </Link>
             <Link href="/#services" onClick={() => setIsOpen(false)}>
               Services
-            </Link>
-            <Link href="/pricing" onClick={() => setIsOpen(false)}>
-              Pricing
             </Link>
             <Link href="/#process" onClick={() => setIsOpen(false)}>
               Process
