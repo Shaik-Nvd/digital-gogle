@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { ArrowUpRight, Send } from "lucide-react";
+import { Eyebrow, RevealLines } from "@/components/ui/Reveal";
 
 const CONTACT_EMAIL = "mail2nvd@gmail.com";
 
@@ -35,10 +36,11 @@ export default function Contact() {
             viewport={{ once: true, margin: "-100px" }}
             transition={{ duration: 0.6 }}
           >
-            <h2 className="text-5xl md:text-7xl font-bold tracking-tight mb-6">
-              Let&apos;s build <br />
-              <span className="text-muted italic font-light">something great.</span>
-            </h2>
+            <Eyebrow index="05" label="Contact" />
+            <RevealLines
+              className="text-5xl md:text-7xl font-bold tracking-[-0.035em] leading-[1.02] mb-6"
+              lines={[<>Let&apos;s build</>, <span key="a" className="serif-accent text-[1.12em]">something great.</span>]}
+            />
             <p className="text-muted text-base leading-relaxed mb-10 max-w-sm">
               Tell us what&apos;s not working on your website or in your business. We&apos;ll reply with a free website check.
             </p>
@@ -77,7 +79,7 @@ export default function Contact() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true, margin: "-100px" }}
             transition={{ duration: 0.6, delay: 0.15 }}
-            className="glass-panel p-6 md:p-8 rounded-2xl border border-glass-border h-fit"
+            className="glass-panel travel-border p-6 md:p-8 rounded-3xl border border-glass-border h-fit shadow-[0_40px_100px_-40px_rgba(0,0,0,0.6)]"
           >
             <div className="grid md:grid-cols-2 gap-4 mb-4">
               <div>
@@ -91,7 +93,7 @@ export default function Contact() {
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   placeholder="Your name"
-                  className="w-full bg-white/5 border border-glass-border rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-accent/60 placeholder:text-muted/60"
+                  className="w-full bg-foreground/[0.04] border border-glass-border rounded-xl px-4 py-3.5 text-sm transition-[border-color,background-color,box-shadow] duration-300 hover:border-foreground/20 focus:outline-none focus:border-accent/60 focus:bg-foreground/[0.06] focus:shadow-[0_0_0_4px_rgba(196,240,66,0.12)] placeholder:text-muted/60"
                 />
               </div>
               <div>
@@ -105,7 +107,7 @@ export default function Contact() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="you@company.com"
-                  className="w-full bg-white/5 border border-glass-border rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-accent/60 placeholder:text-muted/60"
+                  className="w-full bg-foreground/[0.04] border border-glass-border rounded-xl px-4 py-3.5 text-sm transition-[border-color,background-color,box-shadow] duration-300 hover:border-foreground/20 focus:outline-none focus:border-accent/60 focus:bg-foreground/[0.06] focus:shadow-[0_0_0_4px_rgba(196,240,66,0.12)] placeholder:text-muted/60"
                 />
               </div>
             </div>
@@ -120,16 +122,18 @@ export default function Contact() {
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
                 placeholder="What are you looking to build?"
-                className="w-full bg-white/5 border border-glass-border rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-accent/60 placeholder:text-muted/60 resize-none"
+                className="w-full bg-foreground/[0.04] border border-glass-border rounded-xl px-4 py-3.5 text-sm transition-[border-color,background-color,box-shadow] duration-300 hover:border-foreground/20 focus:outline-none focus:border-accent/60 focus:bg-foreground/[0.06] focus:shadow-[0_0_0_4px_rgba(196,240,66,0.12)] placeholder:text-muted/60 resize-none"
               />
             </div>
             <button
               type="submit"
               disabled={!canSubmit}
-              className="inline-flex items-center gap-2 px-6 py-3 bg-foreground text-background font-bold text-sm rounded-full hover:bg-accent hover:text-black transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+              className="btn-shine group inline-flex items-center gap-4 pl-6 pr-1.5 py-1.5 bg-foreground text-background font-bold text-sm rounded-full hover:bg-accent hover:text-black transition-colors duration-300 disabled:opacity-40 disabled:cursor-not-allowed"
             >
               Send message
-              <Send size={16} />
+              <span className="grid h-9 w-9 place-items-center rounded-full bg-background text-foreground transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] group-enabled:group-hover:rotate-[-20deg] group-enabled:group-hover:scale-105">
+                <Send size={15} aria-hidden />
+              </span>
             </button>
           </motion.form>
         </div>

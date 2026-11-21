@@ -2,6 +2,7 @@
 
 import { motion } from "framer-motion";
 import TestimonialCard from "@/components/ui/TestimonialCard";
+import { Eyebrow, RevealLines } from "@/components/ui/Reveal";
 
 const testimonials = [
   {
@@ -25,24 +26,22 @@ export default function Testimonials() {
   return (
     <section id="testimonials" className="py-24 md:py-32 relative z-10 overflow-hidden">
       <div className="container mx-auto px-6">
-        <motion.h2
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: "-100px" }}
-          transition={{ duration: 0.6 }}
-          className="text-4xl md:text-6xl font-black tracking-tighter mb-16 md:mb-24 max-w-2xl"
-        >
-          What clients say, not what we do.
-        </motion.h2>
+        <Eyebrow index="04" label="Testimonials" />
+        <RevealLines
+          className="text-4xl md:text-6xl font-black tracking-tighter mb-16 md:mb-24 max-w-3xl leading-[1.05]"
+          lines={[<>What clients say,</>, <span key="a" className="serif-accent font-normal text-[1.1em]">not what we do.</span>]}
+        />
 
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
           {testimonials.map((t, idx) => (
             <motion.div
               key={t.name}
-              initial={{ opacity: 0, y: 24 }}
-              whileInView={{ opacity: 1, y: 0 }}
+              initial={{ opacity: 0, y: 40, rotateX: 8 }}
+              whileInView={{ opacity: 1, y: 0, rotateX: 0 }}
               viewport={{ once: true, margin: "-100px" }}
-              transition={{ duration: 0.6, delay: idx * 0.08 }}
+              transition={{ duration: 0.9, delay: idx * 0.1, ease: [0.22, 1, 0.36, 1] }}
+              style={{ transformPerspective: 1000 }}
+              className="h-full"
             >
               <TestimonialCard {...t} />
             </motion.div>

@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import { Monitor, Smartphone, Database, TrendingUp, Bot, Shield, Video, Terminal, type LucideIcon } from "lucide-react";
 import { useState } from "react";
 import { services, type ServiceData } from "@/lib/services";
+import { Eyebrow, RevealLines } from "@/components/ui/Reveal";
 
 const icons: Record<string, LucideIcon> = {
   "01": Monitor,
@@ -28,6 +29,11 @@ const ServiceRow = ({ service, index }: { service: Service; index: number }) => 
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, margin: "-50px" }}
       transition={{ duration: 0.5, delay: index * 0.1 }}
+      onMouseMove={(e) => {
+        const rect = e.currentTarget.getBoundingClientRect();
+        e.currentTarget.style.setProperty("--mx", `${e.clientX - rect.left}px`);
+        e.currentTarget.style.setProperty("--my", `${e.clientY - rect.top}px`);
+      }}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
       onClick={() => setIsExpanded((v) => !v)}
@@ -40,8 +46,10 @@ const ServiceRow = ({ service, index }: { service: Service; index: number }) => 
           setIsExpanded((v) => !v);
         }
       }}
-      className="group relative border-b border-glass-border py-8 md:py-12 cursor-pointer overflow-hidden focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent/50"
+      className="spotlight group relative border-b border-glass-border py-8 md:py-12 cursor-pointer overflow-hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/70"
     >
+      {/* Accent bar that grows down the left edge of the open row */}
+      <span aria-hidden className={`absolute left-0 top-0 w-[2px] h-full bg-accent origin-top transition-transform duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] ${isOpen ? "scale-y-100" : "scale-y-0"}`} />
       {/* Background Hover Glow */}
       <div className={`absolute inset-0 bg-gradient-to-r from-accent/5 via-accent/[0.02] to-transparent transition-opacity duration-500 pointer-events-none ${isOpen ? "opacity-100" : "opacity-0"}`} />
 
@@ -59,7 +67,7 @@ const ServiceRow = ({ service, index }: { service: Service; index: number }) => 
 
         {/* Center: Title & Description */}
         <div className="flex flex-col lg:w-1/2">
-          <h3 className={`text-2xl md:text-4xl font-bold tracking-tight mb-3 transition-colors duration-300 ${isOpen ? "text-foreground drop-shadow-md" : "text-foreground/80"}`}>
+          <h3 className={`text-2xl md:text-4xl font-bold tracking-tight mb-3 transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] ${isOpen ? "text-foreground drop-shadow-md md:translate-x-2" : "text-foreground/80"}`}>
             {service.title}
           </h3>
           <p className="text-muted text-sm md:text-base leading-relaxed max-w-xl mb-4">
@@ -68,10 +76,10 @@ const ServiceRow = ({ service, index }: { service: Service; index: number }) => 
           <div>
             <a 
               href="#contact" 
-              className="inline-flex items-center text-sm font-semibold text-accent hover:text-white transition-colors"
+              className="group/cta inline-flex items-center text-sm font-semibold text-accent hover:text-foreground transition-colors"
               onClick={(e) => e.stopPropagation()}
             >
-              {service.cta} <span className="ml-2">→</span>
+              {service.cta} <span className="ml-2 transition-transform duration-300 group-hover/cta:translate-x-1">→</span>
             </a>
           </div>
         </div>
@@ -130,9 +138,11 @@ export default function Services() {
           className="mb-16 md:mb-24 flex flex-col md:flex-row md:items-end justify-between gap-8 border-b border-glass-border pb-12"
         >
           <div>
-            <h2 className="text-5xl md:text-7xl font-black tracking-tighter">
-              Problems we solve for you.
-            </h2>
+            <Eyebrow index="03" label="Services" />
+            <RevealLines
+              className="text-5xl md:text-7xl font-black tracking-tighter leading-[1.02]"
+              lines={[<>Problems we solve</>, <span key="a" className="serif-accent font-normal text-[1.1em]">for you.</span>]}
+            />
           </div>
           <div className="md:text-right text-muted font-mono text-sm uppercase tracking-wider max-w-xs">
             Tap a row to see exactly how we fix it.
