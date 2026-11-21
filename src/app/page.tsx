@@ -31,7 +31,7 @@ export default function Home() {
   return (
     <>
       <Hero />
-      <Marquee items={marqueeItems} />
+      <Marquee items={marqueeItems} variant="display" />
       <Process />
       <WorkGrid />
       <Services />

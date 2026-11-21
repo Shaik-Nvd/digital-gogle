@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
+import { AnimatePresence, motion, useReducedMotion, useScroll, useSpring } from "framer-motion";
 import { ArrowUpRight, Mail, Menu, MessageCircle, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
@@ -21,6 +21,10 @@ export default function Navbar() {
   const panelRef = useRef<HTMLDivElement>(null);
 
   const close = () => setIsOpen(false);
+
+  // Reading-progress hairline along the bottom edge of the bar
+  const { scrollYProgress } = useScroll();
+  const progress = useSpring(scrollYProgress, { stiffness: 120, damping: 24, mass: 0.3 });
 
   // Standard mobile-overlay hygiene: lock the page behind it, close on Escape, keep focus
   // inside while open, and hand focus back to the button that opened it on close.
@@ -70,8 +74,9 @@ export default function Navbar() {
         {/* Desktop Nav */}
         <nav className="hidden md:flex items-center space-x-8 text-sm font-medium">
           {LINKS.slice(0, -1).map((link) => (
-            <Link key={link.href} href={link.href} className="hover:text-accent transition-colors">
+            <Link key={link.href} href={link.href} className="group relative py-1 hover:text-accent transition-colors">
               {link.label}
+              <span aria-hidden className="absolute left-0 -bottom-0.5 h-px w-full origin-right scale-x-0 bg-accent transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:origin-left group-hover:scale-x-100" />
             </Link>
           ))}
         </nav>
@@ -80,7 +85,7 @@ export default function Navbar() {
           <ThemeToggle />
           <Link
             href="/#contact"
-            className="px-5 py-2.5 bg-foreground text-background font-bold text-sm rounded-full hover:bg-accent hover:text-black transition-colors shadow-[0_0_15px_rgba(196,240,66,0)] hover:shadow-[0_0_15px_rgba(196,240,66,0.3)]"
+            className="btn-shine px-5 py-2.5 bg-foreground text-background font-bold text-sm rounded-full hover:bg-accent hover:text-black transition-colors shadow-[0_0_15px_rgba(196,240,66,0)] hover:shadow-[0_0_15px_rgba(196,240,66,0.3)]"
           >
             START A PROJECT
           </Link>
@@ -112,6 +117,14 @@ export default function Navbar() {
           </button>
         </div>
       </div>
+
+      {!reducedMotion && (
+        <motion.div
+          aria-hidden
+          style={{ scaleX: progress }}
+          className="absolute left-0 bottom-0 h-px w-full origin-left bg-accent shadow-[0_0_10px_rgba(196,240,66,0.7)]"
+        />
+      )}
 
       {/* Mobile Nav — full-bleed takeover, not a translucent dropdown: this is the same glass
           surface that ghosted section headings through it before scroll-padding-top was fixed,
