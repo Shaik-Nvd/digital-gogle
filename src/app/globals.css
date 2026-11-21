@@ -34,6 +34,8 @@
   --color-glass-border: var(--glass-border);
   --font-sans: var(--font-inter);
   --font-mono: var(--font-jetbrains-mono);
+  --font-serif: var(--font-instrument-serif), "Times New Roman", serif;
+  --ease-premium: cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 html {
@@ -152,4 +154,131 @@ body::before {
   60% { clip-path: inset(70% 0 5% 0); transform: translate(2px, -1px); }
   80% { clip-path: inset(20% 0 50% 0); transform: translate(-1px, 1px); }
   100% { clip-path: inset(0 0 90% 0); transform: translate(2px, 0); }
+}
+
+/* ───────────────────────── Premium layer ─────────────────────────
+   Shared polish used across sections: editorial serif accents, a visible keyboard focus ring,
+   the pill-button shine, cursor-following card spotlight, the hero panel's travelling border,
+   and the hairline dividers between sections. Everything is token-based so both themes work. */
+
+/* Serif accent phrase inside a sans headline — a soft vertical gradient so it reads as lit, not flat */
+.serif-accent {
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-weight: 400;
+  letter-spacing: -0.01em;
+  background: linear-gradient(180deg, var(--foreground) 0%, color-mix(in srgb, var(--foreground) 55%, var(--muted)) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  padding-right: 0.08em; /* italic overhang would otherwise be clipped by background-clip */
+}
+
+/* Mono eyebrow used above section headings: "(01) — Process" */
+.eyebrow {
+  font-family: var(--font-mono), monospace;
+  font-size: 11px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+/* Keyboard focus stays clearly visible everywhere, without showing on mouse clicks */
+:where(a, button, input, textarea, select, [role="button"], [tabindex]):focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+
+/* Pill button: a light sweep crosses it on hover */
+.btn-shine {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+}
+.btn-shine::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: linear-gradient(110deg, transparent 30%, rgba(255, 255, 255, 0.45) 50%, transparent 70%);
+  transform: translateX(-120%);
+  transition: transform 0.8s var(--ease-premium);
+}
+.btn-shine:hover::after {
+  transform: translateX(120%);
+}
+
+/* Card spotlight: a soft accent glow that follows the cursor (--mx/--my set from JS) */
+.spotlight {
+  position: relative;
+}
+.spotlight::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.4s ease;
+  background: radial-gradient(420px circle at var(--mx, 50%) var(--my, 50%), color-mix(in srgb, var(--accent) 14%, transparent), transparent 60%);
+}
+.spotlight:hover::before {
+  opacity: 1;
+}
+
+/* Travelling accent border (hero panel) — a conic gradient masked to a 1px ring */
+@property --border-angle {
+  syntax: "<angle>";
+  initial-value: 0deg;
+  inherits: false;
+}
+.travel-border {
+  position: relative;
+}
+.travel-border::after {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  padding: 1px;
+  pointer-events: none;
+  background: conic-gradient(from var(--border-angle), transparent 0deg, var(--accent) 60deg, transparent 120deg, transparent 360deg);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
+  animation: borderSpin 6s linear infinite;
+  opacity: 0.85;
+}
+@keyframes borderSpin {
+  to { --border-angle: 360deg; }
+}
+
+/* Glowing hairline that separates sections instead of a hard cut */
+.section-hairline {
+  height: 1px;
+  width: 100%;
+  background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--accent) 45%, transparent), transparent);
+  opacity: 0.6;
+}
+
+/* Outlined display text (marquee / footer wordmark) */
+.text-outline {
+  color: transparent;
+  -webkit-text-stroke: 1px color-mix(in srgb, var(--foreground) 35%, transparent);
+}
+
+/* Reduced motion: stop every decorative loop, keep content fully visible */
+@media (prefers-reduced-motion: reduce) {
+  body::before,
+  .code-rail-track,
+  .travel-border::after,
+  .animate-\[marquee\] {
+    animation: none !important;
+  }
+  .btn-shine::after {
+    display: none;
+  }
+  html {
+    scroll-behavior: auto;
+  }
 }

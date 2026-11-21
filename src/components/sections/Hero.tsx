@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, type MouseEvent } from "react";
 import { motion, useMotionValue, useScroll, useSpring, useTransform } from "framer-motion";
-import { Bot, ChevronDown } from "lucide-react";
+import { ArrowDown, ArrowUpRight, Bot, ChevronDown } from "lucide-react";
 import { useLoading } from "@/components/providers/LoadingProvider";
 import { services } from "@/lib/services";
 import HeroField from "./HeroField";
@@ -84,6 +84,9 @@ export default function Hero() {
         />
         {/* Live constellation field — the whole scene reacts to the cursor, not just the panel */}
         <HeroField />
+        {/* Soft top light + a fade into the next section, so the hero hands off instead of cutting */}
+        <div aria-hidden className="absolute -top-40 left-1/2 -translate-x-1/2 w-[900px] h-[500px] rounded-full bg-accent/[0.07] blur-[140px] pointer-events-none" />
+        <div aria-hidden className="absolute inset-x-0 bottom-0 h-40 bg-gradient-to-b from-transparent to-background pointer-events-none" />
       </motion.div>
 
       <div className="container mx-auto px-6 relative z-10 flex flex-col lg:flex-row items-center justify-between">
@@ -96,13 +99,34 @@ export default function Hero() {
           animate={shouldAnimate ? "visible" : "hidden"}
           className="w-full"
         >
-          <motion.h1
-            variants={itemVariants}
-            className="text-5xl md:text-7xl font-bold tracking-tight leading-[1.1] md:leading-[1.15] mb-6"
-          >
-            Is your website <br className="hidden md:block" />
-            <span className="text-muted italic font-light">costing you customers?</span>
-          </motion.h1>
+          <motion.div variants={itemVariants} className="mb-7 md:mb-8">
+            <span className="inline-flex items-center gap-2.5 rounded-full border border-glass-border bg-foreground/[0.04] backdrop-blur-md pl-2.5 pr-4 py-1.5 font-mono text-[10px] md:text-[11px] uppercase tracking-[0.2em] text-muted">
+              <span className="relative flex h-2 w-2">
+                <span className="absolute inline-flex h-full w-full rounded-full bg-accent opacity-75 motion-safe:animate-ping" />
+                <span className="relative inline-flex h-2 w-2 rounded-full bg-accent" />
+              </span>
+              Digital Gogle Studio <span className="text-foreground/30">/</span> Bangalore
+            </span>
+          </motion.div>
+
+          {/* Masked line reveal: each line rises from behind its own clip as the preloader lifts */}
+          <h1 className="text-[2.9rem] leading-[1.02] sm:text-6xl md:text-7xl xl:text-[5.4rem] font-bold tracking-[-0.035em] mb-7">
+            {[
+              <>Is your website</>,
+              <span className="serif-accent text-[1.12em] leading-[0.95] tracking-[-0.02em]">costing you customers?</span>,
+            ].map((line, i) => (
+              <span key={i} className="block overflow-hidden pb-[0.14em] -mb-[0.14em]">
+                <motion.span
+                  className="block"
+                  initial={reducedMotion ? false : { y: "110%", rotate: 2 }}
+                  animate={shouldAnimate ? { y: "0%", rotate: 0 } : undefined}
+                  transition={{ duration: reducedMotion ? 0.01 : 1, delay: reducedMotion ? 0 : 0.15 + i * 0.12, ease: [0.22, 1, 0.36, 1] }}
+                >
+                  {line}
+                </motion.span>
+              </span>
+            ))}
+          </h1>
 
           <motion.p variants={itemVariants} className="text-[15px] md:text-lg text-muted mb-10 max-w-xl leading-relaxed">
             Slow pages, missed enquiries, and a site that looks like everyone else&apos;s. We build the websites, AI tools, and marketing that turn visitors into paying customers.
@@ -111,19 +135,22 @@ export default function Hero() {
           <motion.div variants={itemVariants} className="flex flex-col md:flex-row items-center gap-4 w-full">
             <a
               href="#contact"
-              className="w-full md:w-auto px-8 py-3.5 md:py-4 bg-accent text-black font-bold hover:scale-105 transition-all duration-300 flex items-center justify-center space-x-3 rounded-full shadow-[0_0_20px_rgba(196,240,66,0.3)] hover:shadow-[0_0_30px_rgba(196,240,66,0.5)]"
+              className="btn-shine group w-full md:w-auto pl-7 pr-2 py-2 bg-accent text-black font-bold transition-[transform,box-shadow] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] hover:-translate-y-0.5 flex items-center justify-between md:justify-start gap-4 rounded-full shadow-[0_0_20px_rgba(196,240,66,0.3)] hover:shadow-[0_14px_40px_-10px_rgba(196,240,66,0.6)]"
             >
               <span>Get a free website check</span>
-              <span className="text-xl">↓</span>
+              <span className="relative grid h-10 w-10 md:h-11 md:w-11 place-items-center rounded-full bg-black text-accent overflow-hidden">
+                <ArrowDown size={18} className="transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:translate-y-[150%]" aria-hidden />
+                <ArrowDown size={18} className="absolute -translate-y-[150%] transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:translate-y-0" aria-hidden />
+              </span>
             </a>
             <a
               href="https://wa.me/918553627474"
               target="_blank"
               rel="noopener noreferrer"
-              className="w-full md:w-auto px-8 py-3.5 md:py-4 bg-foreground/5 backdrop-blur-md border border-foreground/10 hover:bg-foreground/10 hover:border-foreground/20 transition-all duration-300 flex items-center justify-center space-x-3 rounded-full font-medium"
+              className="group w-full md:w-auto px-8 py-3.5 md:py-4 bg-foreground/5 backdrop-blur-md border border-foreground/10 hover:bg-foreground/10 hover:border-accent/40 transition-all duration-300 flex items-center justify-center gap-3 rounded-full font-medium"
             >
               <span>Talk on WhatsApp</span>
-              <span className="text-accent text-xl">↗</span>
+              <ArrowUpRight size={18} className="text-accent transition-transform duration-300 group-hover:translate-x-0.5 group-hover:-translate-y-0.5" aria-hidden />
             </a>
           </motion.div>
         </motion.div>
@@ -141,6 +168,8 @@ export default function Hero() {
           }}
           className="relative h-[350px] md:h-[460px] flex items-center justify-center w-full"
         >
+          {/* Accent glow pooled under the panel, so it sits in light rather than floating on flat black */}
+          <div aria-hidden className="absolute w-[260px] h-[260px] md:w-[380px] md:h-[380px] rounded-full bg-accent/15 blur-[90px]" />
           {/* Energy Rings */}
           <div className="absolute w-[280px] h-[280px] md:w-[400px] md:h-[400px] rounded-full border border-glass-border opacity-50 shadow-[0_0_50px_rgba(196,240,66,0.05)]" />
           <div className="absolute w-[350px] h-[350px] md:w-[500px] md:h-[500px] rounded-full border border-glass-border opacity-20" />
@@ -149,7 +178,7 @@ export default function Hero() {
             onMouseMove={handlePanelMove}
             onMouseLeave={resetPanel}
             style={{ rotateX: springX, rotateY: springY, transformPerspective: 900 }}
-            className="glass-panel relative z-10 w-full max-w-[340px] rounded-3xl p-6 md:p-7 mx-6"
+            className="glass-panel travel-border relative z-10 w-full max-w-[340px] rounded-3xl p-6 md:p-7 mx-6 shadow-[0_40px_100px_-30px_rgba(0,0,0,0.6)]"
           >
             <div className="flex items-center justify-between mb-6">
               <div className="flex items-center gap-2">
