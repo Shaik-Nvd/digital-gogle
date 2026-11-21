@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, type MouseEvent } from "react";
 import { motion, useMotionValue, useScroll, useSpring, useTransform } from "framer-motion";
-import { ArrowDown, ArrowUpRight, Bot, ChevronDown } from "lucide-react";
+import { ArrowDown, ArrowUpRight, Bot, ChevronDown, Phone } from "lucide-react";
 import { useLoading } from "@/components/providers/LoadingProvider";
 import { services } from "@/lib/services";
 import HeroField from "./HeroField";
@@ -128,14 +128,30 @@ export default function Hero() {
             ))}
           </h1>
 
-          <motion.p variants={itemVariants} className="text-[15px] md:text-lg text-muted mb-10 max-w-xl leading-relaxed">
+          <motion.p variants={itemVariants} className="text-[15px] md:text-lg text-muted mb-6 max-w-xl leading-relaxed">
             Slow pages, missed enquiries, and a site that looks like everyone else&apos;s. We build the websites, AI tools, and marketing that turn visitors into paying customers.
           </motion.p>
 
-          <motion.div variants={itemVariants} className="flex flex-col md:flex-row items-center gap-4 w-full">
+          {/* Trust line: three short proof points, separated by accent dots, over a fading hairline */}
+          <motion.ul
+            variants={itemVariants}
+            className="relative mb-10 max-w-xl flex flex-wrap items-center gap-x-5 gap-y-2 pb-5 text-[13px] md:text-sm font-medium text-foreground/80 after:absolute after:left-0 after:bottom-0 after:h-px after:w-full after:bg-gradient-to-r after:from-foreground/15 after:to-transparent"
+          >
+            {["10+ live products shipped", "Free consultation", "Response within hours"].map((item, i) => (
+              <li key={item} className="flex items-center gap-2 whitespace-nowrap">
+                <span
+                  aria-hidden
+                  className={i === 0 ? "h-1.5 w-1.5 rounded-full bg-accent shadow-[0_0_8px_rgba(196,240,66,0.8)]" : "h-1 w-1 rounded-full bg-foreground/30"}
+                />
+                {item}
+              </li>
+            ))}
+          </motion.ul>
+
+          <motion.div variants={itemVariants} className="flex flex-col md:flex-row items-center gap-3 md:gap-2 md:flex-wrap w-full">
             <a
               href="#contact"
-              className="btn-shine group w-full md:w-auto pl-7 pr-2 py-2 bg-accent text-black font-bold transition-[transform,box-shadow] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] hover:-translate-y-0.5 flex items-center justify-between md:justify-start gap-4 rounded-full shadow-[0_0_20px_rgba(196,240,66,0.3)] hover:shadow-[0_14px_40px_-10px_rgba(196,240,66,0.6)]"
+              className="btn-shine group w-full md:w-auto pl-7 md:pl-5 pr-2 md:text-[15px] py-2 bg-accent text-black font-bold transition-[transform,box-shadow] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] hover:-translate-y-0.5 flex items-center justify-between md:justify-start gap-4 whitespace-nowrap rounded-full shadow-[0_0_20px_rgba(196,240,66,0.3)] hover:shadow-[0_14px_40px_-10px_rgba(196,240,66,0.6)]"
             >
               <span>Get a free website check</span>
               <span className="relative grid h-10 w-10 md:h-11 md:w-11 place-items-center rounded-full bg-black text-accent overflow-hidden">
@@ -147,10 +163,18 @@ export default function Hero() {
               href="https://wa.me/918553627474"
               target="_blank"
               rel="noopener noreferrer"
-              className="group w-full md:w-auto px-8 py-3.5 md:py-4 bg-foreground/5 backdrop-blur-md border border-foreground/10 hover:bg-foreground/10 hover:border-accent/40 transition-all duration-300 flex items-center justify-center gap-3 rounded-full font-medium"
+              className="group w-full md:w-auto px-8 md:px-6 py-3.5 md:py-4 md:text-[15px] bg-foreground/5 backdrop-blur-md border border-foreground/10 hover:bg-foreground/10 hover:border-accent/40 transition-all duration-300 flex items-center justify-center gap-3 whitespace-nowrap rounded-full font-medium"
             >
               <span>Talk on WhatsApp</span>
               <ArrowUpRight size={18} className="text-accent transition-transform duration-300 group-hover:translate-x-0.5 group-hover:-translate-y-0.5" aria-hidden />
+            </a>
+            <a
+              href="tel:+918553627474"
+              aria-label="Call us on +91 85536 27474"
+              className="group w-full md:w-auto px-7 md:px-4 py-3.5 md:py-4 md:text-[15px] border border-foreground/10 hover:border-accent/40 hover:bg-foreground/5 transition-all duration-300 flex items-center justify-center gap-2.5 whitespace-nowrap rounded-full font-medium"
+            >
+              <Phone size={16} className="text-accent transition-transform duration-300 group-hover:-rotate-12" aria-hidden />
+              <span>Call Us</span>
             </a>
           </motion.div>
         </motion.div>
@@ -256,7 +280,7 @@ export default function Hero() {
       {!reducedMotion && (
         <motion.div
           style={{ opacity: scrollCueOpacity }}
-          className="absolute bottom-24 md:bottom-28 left-1/2 -translate-x-1/2 z-10 flex flex-col items-center gap-2 pointer-events-none"
+          className="absolute bottom-24 md:bottom-28 left-1/2 -translate-x-1/2 z-10 hidden [@media(min-height:960px)]:flex flex-col items-center gap-2 pointer-events-none"
         >
           <span className="font-mono text-[10px] text-muted uppercase tracking-widest">Scroll to explore</span>
           <span className="relative flex h-9 w-5 items-start justify-center rounded-full border border-glass-border p-1.5">

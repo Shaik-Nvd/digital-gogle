@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { AnimatePresence, motion, useReducedMotion, useScroll, useSpring } from "framer-motion";
-import { ArrowUpRight, Mail, Menu, MessageCircle, X } from "lucide-react";
+import { ArrowUpRight, Mail, Menu, MessageCircle, Phone, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
 
@@ -83,6 +83,13 @@ export default function Navbar() {
 
         <div className="hidden md:flex items-center space-x-4">
           <ThemeToggle />
+          <a
+            href="tel:+918553627474"
+            className="hidden xl:inline-flex items-center gap-2 text-sm font-semibold tracking-tight whitespace-nowrap hover:text-accent transition-colors"
+          >
+            <Phone size={14} className="text-accent" aria-hidden />
+            +91 85536 27474
+          </a>
           <Link
             href="/#contact"
             className="btn-shine px-5 py-2.5 bg-foreground text-background font-bold text-sm rounded-full hover:bg-accent hover:text-black transition-colors shadow-[0_0_15px_rgba(196,240,66,0)] hover:shadow-[0_0_15px_rgba(196,240,66,0.3)]"
