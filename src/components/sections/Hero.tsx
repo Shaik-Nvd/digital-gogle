@@ -112,8 +112,8 @@ export default function Hero() {
           {/* Masked line reveal: each line rises from behind its own clip as the preloader lifts */}
           <h1 className="text-[2.9rem] leading-[1.02] sm:text-6xl md:text-7xl xl:text-[5.4rem] font-bold tracking-[-0.035em] mb-7">
             {[
-              <>Is your website</>,
-              <span className="serif-accent text-[1.12em] leading-[0.95] tracking-[-0.02em]">costing you customers?</span>,
+              "Is your website",
+              <span key="accent" className="serif-accent text-[1.12em] leading-[0.95] tracking-[-0.02em]">costing you customers?</span>,
             ].map((line, i) => (
               <span key={i} className="block overflow-hidden pb-[0.14em] -mb-[0.14em]">
                 <motion.span
