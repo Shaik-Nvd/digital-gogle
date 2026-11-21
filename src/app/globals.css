@@ -278,6 +278,13 @@ body::before {
   .btn-shine::after {
     display: none;
   }
+  /* Reveal targets render their hidden start state identically on server and client (so hydration
+     never diverges); for reduced-motion visitors this pins them to their final, visible state. */
+  .rm-reset {
+    transform: none !important;
+    opacity: 1 !important;
+    filter: none !important;
+  }
   html {
     scroll-behavior: auto;
   }

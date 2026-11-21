@@ -118,13 +118,12 @@ export default function Navbar() {
         </div>
       </div>
 
-      {!reducedMotion && (
-        <motion.div
-          aria-hidden
-          style={{ scaleX: progress }}
-          className="absolute left-0 bottom-0 h-px w-full origin-left bg-accent shadow-[0_0_10px_rgba(196,240,66,0.7)]"
-        />
-      )}
+      {/* Always rendered (hidden by CSS for reduced motion) so server and client markup match */}
+      <motion.div
+        aria-hidden
+        style={{ scaleX: progress }}
+        className="absolute left-0 bottom-0 h-px w-full origin-left bg-accent shadow-[0_0_10px_rgba(196,240,66,0.7)] motion-reduce:hidden"
+      />
 
       {/* Mobile Nav — full-bleed takeover, not a translucent dropdown: this is the same glass
           surface that ghosted section headings through it before scroll-padding-top was fixed,

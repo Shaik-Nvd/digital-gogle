@@ -117,8 +117,8 @@ export default function Hero() {
             ].map((line, i) => (
               <span key={i} className="block overflow-hidden pb-[0.14em] -mb-[0.14em]">
                 <motion.span
-                  className="block"
-                  initial={reducedMotion ? false : { y: "110%", rotate: 2 }}
+                  className="block rm-reset"
+                  initial={{ y: "110%", rotate: 2 }}
                   animate={shouldAnimate ? { y: "0%", rotate: 0 } : undefined}
                   transition={{ duration: reducedMotion ? 0.01 : 1, delay: reducedMotion ? 0 : 0.15 + i * 0.12, ease: [0.22, 1, 0.36, 1] }}
                 >
