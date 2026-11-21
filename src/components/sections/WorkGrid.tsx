@@ -5,6 +5,7 @@ import { ArrowUpRight, ChevronLeft, ChevronRight } from "lucide-react";
 import Image from "next/image";
 import { useCallback, useRef, useState } from "react";
 import { projects } from "@/lib/projects";
+import { Eyebrow, RevealLines } from "@/components/ui/Reveal";
 
 const SCROLL_SPEED = 56; // px/second, auto-advance speed while idle
 const RESUME_DELAY = 2200; // ms of stillness after a manual swipe before auto-advance resumes
@@ -41,7 +42,32 @@ export default function WorkGrid() {
     return next;
   }, []);
 
+  /**
+   * Curved ribbon: every visible card turns toward the centre of the viewport and lifts slightly
+   * the further it sits from it, so the strip reads as a concave 3D band of work rather than a
+   * flat conveyor. Written straight to each card's inner wrapper (never the <a> itself, whose
+   * transform Framer owns for the hover lift), and recomputed per frame from real positions so it
+   * stays correct through auto-scroll, drag, wheel swipes and snapping alike.
+   */
+  const applyRibbon = () => {
+    const track = trackRef.current;
+    if (!track || prefersReducedMotion) return;
+    const vw = window.innerWidth;
+    const half = vw / 2;
+    const maxTurn = vw < 768 ? 10 : 20;
+    const lift = vw < 768 ? 10 : 34;
+    for (const card of Array.from(track.children) as HTMLElement[]) {
+      const inner = card.firstElementChild as HTMLElement | null;
+      if (!inner) continue;
+      const rect = card.getBoundingClientRect();
+      if (rect.right < -300 || rect.left > vw + 300) continue;
+      const c = Math.max(-1.5, Math.min(1.5, (rect.left + rect.width / 2 - half) / half));
+      inner.style.transform = `perspective(1400px) translateY(${(-c * c * lift).toFixed(1)}px) rotateY(${(-c * maxTurn).toFixed(2)}deg) scale(${(1 + Math.abs(c) * 0.03).toFixed(3)})`;
+    }
+  };
+
   useAnimationFrame((_, delta) => {
+    applyRibbon();
     if (isPaused || isDraggingRef.current || prefersReducedMotion) return;
     const width = loopWidth();
     if (!width) return;
@@ -124,20 +150,20 @@ export default function WorkGrid() {
   return (
     <section id="work" className="py-24 md:py-32 relative z-10">
       <div className="container mx-auto px-6 mb-16 md:mb-24">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: "-100px" }}
-          transition={{ duration: 0.6 }}
-        >
-          <h2 className="text-4xl md:text-5xl font-bold tracking-tight">
-            Featured Projects
-          </h2>
-        </motion.div>
+        <Eyebrow index="02" label="Selected work" />
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
+          <RevealLines
+            className="text-5xl md:text-7xl font-bold tracking-[-0.035em] leading-[1.02]"
+            lines={[<>Featured <span key="p" className="serif-accent text-[1.1em]">Projects</span></>]}
+          />
+          <p className="eyebrow md:text-right">
+            <span className="text-accent">{projects.length}</span> live builds &mdash; drag or swipe
+          </p>
+        </div>
       </div>
 
       <div
-        className="relative flex overflow-x-hidden py-4"
+        className="relative flex overflow-x-hidden py-10 md:py-14"
         onMouseEnter={() => setIsPaused(true)}
         onMouseLeave={() => setIsPaused(false)}
         onWheel={handleWheel}
@@ -169,6 +195,7 @@ export default function WorkGrid() {
               transition={{ type: "spring", stiffness: 320, damping: 26 }}
               className="group/card select-none cursor-pointer shrink-0 block w-[85vw] sm:w-[400px] md:w-[500px] rounded-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/60 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
             >
+              <div className="will-change-transform [transform-style:preserve-3d]">
               <div className="relative w-full aspect-[4/3] rounded-2xl overflow-hidden mb-6 glass-panel border border-glass-border shadow-2xl transition-[box-shadow,border-color] duration-500 ease-out group-hover/card:border-accent/50 group-hover/card:shadow-[0_28px_70px_-24px_rgba(196,240,66,0.4)]">
                 {/* Project Cover Image (falls back to a gradient tile if the screenshot service fails) */}
                 {imageErrors[project.id] ? (
@@ -214,6 +241,7 @@ export default function WorkGrid() {
                 <div className="w-10 h-10 shrink-0 rounded-full border border-glass-border flex items-center justify-center group-hover/card:bg-accent group-hover/card:text-black group-hover/card:border-accent transition-all duration-300">
                   <ArrowUpRight size={20} className="group-hover/card:rotate-45 transition-transform" />
                 </div>
+              </div>
               </div>
             </motion.a>
           ))}
