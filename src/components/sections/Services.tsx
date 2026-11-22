@@ -1,8 +1,8 @@
 "use client";
 
-import { motion } from "framer-motion";
-import { Monitor, Smartphone, Database, TrendingUp, Bot, Shield, Video, Terminal, type LucideIcon } from "lucide-react";
-import { useState } from "react";
+import { AnimatePresence, motion, useInView } from "framer-motion";
+import { ArrowUpRight, Bot, Database, Monitor, Shield, Smartphone, Terminal, TrendingUp, Video, type LucideIcon } from "lucide-react";
+import { useEffect, useRef, useState, type CSSProperties } from "react";
 import { services, type ServiceData } from "@/lib/services";
 import { Eyebrow, RevealLines } from "@/components/ui/Reveal";
 
@@ -16,143 +16,236 @@ const icons: Record<string, LucideIcon> = {
   "07": Video,
 };
 
-type Service = ServiceData & { icon: LucideIcon };
+const EASE = [0.22, 1, 0.36, 1] as const;
+const CYCLE_MS = 6500;
 
-const ServiceRow = ({ service, index }: { service: Service; index: number }) => {
-  const [isHovered, setIsHovered] = useState(false);
-  const [isExpanded, setIsExpanded] = useState(false);
-  const isOpen = isHovered || isExpanded;
-
+/** The full answer for one service: what's wrong, what we do about it, what's included, next step. */
+function Detail({ service, compact = false }: { service: ServiceData; compact?: boolean }) {
+  const Icon = icons[service.id];
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, margin: "-50px" }}
-      transition={{ duration: 0.5, delay: index * 0.1 }}
-      onMouseMove={(e) => {
-        const rect = e.currentTarget.getBoundingClientRect();
-        e.currentTarget.style.setProperty("--mx", `${e.clientX - rect.left}px`);
-        e.currentTarget.style.setProperty("--my", `${e.clientY - rect.top}px`);
-      }}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
-      onClick={() => setIsExpanded((v) => !v)}
-      role="button"
-      tabIndex={0}
-      aria-expanded={isOpen}
-      onKeyDown={(e) => {
-        if (e.key === "Enter" || e.key === " ") {
-          e.preventDefault();
-          setIsExpanded((v) => !v);
-        }
-      }}
-      className="spotlight group relative border-b border-glass-border py-8 md:py-12 cursor-pointer overflow-hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/70"
-    >
-      {/* Accent bar that grows down the left edge of the open row */}
-      <span aria-hidden className={`absolute left-0 top-0 w-[2px] h-full bg-accent origin-top transition-transform duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] ${isOpen ? "scale-y-100" : "scale-y-0"}`} />
-      {/* Background Hover Glow */}
-      <div className={`absolute inset-0 bg-gradient-to-r from-accent/5 via-accent/[0.02] to-transparent transition-opacity duration-500 pointer-events-none ${isOpen ? "opacity-100" : "opacity-0"}`} />
-
-      <div className="relative z-10 flex flex-col lg:flex-row lg:items-center gap-6 lg:gap-12 px-2 md:px-8">
-
-        {/* Left side: Number & Icon */}
-        <div className="flex items-center gap-6 lg:w-1/4 shrink-0">
-          <span className={`text-2xl md:text-3xl font-mono transition-colors duration-300 ${isOpen ? "text-accent" : "text-muted opacity-50"}`}>
-            {service.id}
-          </span>
-          <div className={`p-4 rounded-xl border transition-all duration-300 relative ${isOpen ? "border-accent/30 bg-accent/10 shadow-[0_0_30px_rgba(196,240,66,0.15)]" : "border-glass-border bg-glass"}`}>
-            <service.icon size={32} className={`transition-colors duration-300 relative z-10 ${isOpen ? "text-accent drop-shadow-[0_0_10px_rgba(196,240,66,0.5)]" : "text-foreground"}`} />
-          </div>
+    <div className="relative">
+      <div className="flex items-start justify-between gap-6">
+        {/* Icon orb: a rotating conic halo around a glass core */}
+        <div className="relative grid h-16 w-16 md:h-20 md:w-20 shrink-0 place-items-center">
+          <span aria-hidden className="absolute inset-0 rounded-full bg-[conic-gradient(from_0deg,transparent_0deg,var(--color-accent)_90deg,transparent_180deg)] opacity-80 motion-safe:animate-[spin_4s_linear_infinite]" />
+          <span aria-hidden className="absolute inset-[2px] rounded-full bg-background" />
+          <span aria-hidden className="absolute inset-2 rounded-full bg-accent/15 blur-md" />
+          <Icon className="relative h-7 w-7 md:h-8 md:w-8 text-accent drop-shadow-[0_0_12px_rgba(196,240,66,0.6)]" />
         </div>
-
-        {/* Center: Title & Description */}
-        <div className="flex flex-col lg:w-1/2">
-          <h3 className={`text-2xl md:text-4xl font-bold tracking-tight mb-3 transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] ${isOpen ? "text-foreground drop-shadow-md md:translate-x-2" : "text-foreground/80"}`}>
-            {service.title}
-          </h3>
-          <p className="text-muted text-sm md:text-base leading-relaxed max-w-xl mb-4">
-            {service.description}
-          </p>
-          <div>
-            <a 
-              href="#contact" 
-              className="group/cta inline-flex items-center text-sm font-semibold text-accent hover:text-foreground transition-colors"
-              onClick={(e) => e.stopPropagation()}
-            >
-              {service.cta} <span className="ml-2 transition-transform duration-300 group-hover/cta:translate-x-1">→</span>
-            </a>
-          </div>
-        </div>
-
-        {/* Right: Terminal Label */}
-        <div className="hidden lg:flex flex-1 justify-end">
-          <code className={`flex items-center space-x-2 text-xs font-mono px-4 py-2 rounded-full border transition-colors duration-300 ${isOpen ? "border-accent/30 text-accent bg-accent/5 shadow-[0_0_15px_rgba(196,240,66,0.1)]" : "border-glass-border text-muted opacity-50"}`}>
-            <Terminal size={12} />
-            <span>{service.label}</span>
-          </code>
-        </div>
+        <code className="inline-flex items-center gap-2 rounded-full border border-accent/30 bg-accent/5 px-3 py-1.5 font-mono text-[11px] text-accent">
+          <Terminal size={12} aria-hidden />
+          {service.label}
+        </code>
       </div>
 
-      {/* Expandable Tags Section */}
-      <motion.div
-        initial={false}
-        animate={{ height: isOpen ? "auto" : 0, opacity: isOpen ? 1 : 0 }}
-        transition={{ duration: 0.4, ease: "easeInOut" }}
-        className="overflow-hidden"
+      {/* In the inline (mobile) version the row above already shows the title */}
+      {!compact && <h3 className="mt-6 text-3xl xl:text-[2.6rem] font-bold tracking-tight leading-[1.08]">{service.title}</h3>}
+      <p className={`${compact ? "mt-5" : "mt-4"} text-muted leading-relaxed`}>{service.description}</p>
+      {service.expandedExtra && <p className="mt-3 text-muted leading-relaxed">{service.expandedExtra}</p>}
+
+      <ul className="mt-6 flex flex-wrap gap-2" aria-label="What's included">
+        {service.tags.map((tag, i) => (
+          <motion.li
+            key={tag}
+            initial={{ opacity: 0, y: 10, scale: 0.9 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            transition={{ duration: 0.4, delay: 0.25 + i * 0.05, ease: EASE }}
+            className="rm-reset rounded-full border border-glass-border bg-foreground/[0.04] px-3.5 py-1.5 font-mono text-[11px] text-foreground/80"
+          >
+            {tag}
+          </motion.li>
+        ))}
+      </ul>
+
+      <a
+        href="#contact"
+        onClick={(e) => e.stopPropagation()}
+        className="btn-shine group/cta mt-8 inline-flex items-center gap-3 rounded-full bg-accent pl-5 pr-1.5 py-1.5 text-sm font-bold text-black shadow-[0_0_20px_rgba(196,240,66,0.25)] transition-[transform,box-shadow] duration-500 hover:-translate-y-0.5 hover:shadow-[0_14px_36px_-10px_rgba(196,240,66,0.6)]"
       >
-        <div className="pt-8 px-2 md:px-8 lg:pl-[calc(25%+3rem)] pb-4">
-          {service.expandedExtra && (
-            <p className="text-muted text-sm md:text-base leading-relaxed max-w-xl mb-6">
-              {service.expandedExtra}
-            </p>
-          )}
-          <div className="flex flex-wrap gap-2 md:gap-3">
-            {service.tags.map((tag: string, tagIdx: number) => (
-              <motion.span
-                key={tagIdx}
-                initial={{ opacity: 0, x: -10 }}
-                animate={{ opacity: isOpen ? 1 : 0, x: isOpen ? 0 : -10 }}
-                transition={{ duration: 0.3, delay: isOpen ? tagIdx * 0.05 : 0 }}
-                className="px-4 py-2 text-xs font-mono rounded-full border border-accent/20 bg-accent/5 text-accent/90 backdrop-blur-sm hover:bg-accent/20 hover:border-accent/50 transition-colors cursor-crosshair"
-                onClick={(e) => e.stopPropagation()}
-              >
-                {tag}
-              </motion.span>
-            ))}
-          </div>
-        </div>
-      </motion.div>
-    </motion.div>
+        {service.cta}
+        <span className="grid h-8 w-8 place-items-center rounded-full bg-black text-accent transition-transform duration-500 group-hover/cta:rotate-45">
+          <ArrowUpRight size={16} aria-hidden />
+        </span>
+      </a>
+    </div>
   );
-};
+}
 
 export default function Services() {
+  const [active, setActive] = useState(0);
+  const [auto, setAuto] = useState(true); // stops for good after the visitor picks one
+  const [paused, setPaused] = useState(false);
+  const [reduced, setReduced] = useState(false);
+  const sectionRef = useRef<HTMLElement>(null);
+  const inView = useInView(sectionRef, { margin: "-20% 0px -20% 0px" });
+  const current = services[active];
+
+  useEffect(() => {
+    const mql = window.matchMedia("(prefers-reduced-motion: reduce)");
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- client-only media query read
+    setReduced(mql.matches);
+  }, []);
+
+  // Auto-advance through the services while the section is on screen and nobody is interacting
+  const cycling = auto && !paused && inView && !reduced;
+  useEffect(() => {
+    if (!cycling) return;
+    const id = window.setTimeout(() => setActive((i) => (i + 1) % services.length), CYCLE_MS);
+    return () => window.clearTimeout(id);
+  }, [cycling, active]);
+
+  const pick = (i: number) => {
+    setAuto(false);
+    setActive(i);
+  };
+
   return (
-    <section id="services" className="py-24 md:py-32 relative z-10 bg-background">
-      <div className="container mx-auto px-4 md:px-6 max-w-7xl">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: "-100px" }}
-          transition={{ duration: 0.6 }}
-          className="mb-16 md:mb-24 flex flex-col md:flex-row md:items-end justify-between gap-8 border-b border-glass-border pb-12"
-        >
+    <section
+      ref={sectionRef}
+      id="services"
+      className="py-24 md:py-32 relative z-10 bg-background overflow-x-clip"
+      onMouseEnter={() => setPaused(true)}
+      onMouseLeave={() => setPaused(false)}
+      onFocus={() => setPaused(true)}
+      onBlur={() => setPaused(false)}
+    >
+      <div aria-hidden className="pointer-events-none absolute right-0 top-1/3 h-[520px] w-[520px] rounded-full bg-accent/[0.06] blur-[140px]" />
+
+      <div className="container mx-auto px-4 md:px-6 max-w-7xl relative">
+        <div className="mb-12 md:mb-16 flex flex-col md:flex-row md:items-end justify-between gap-6">
           <div>
             <Eyebrow index="03" label="Services" />
             <RevealLines
-              className="text-5xl md:text-7xl font-black tracking-tighter leading-[1.02]"
+              className="text-4xl md:text-6xl font-black tracking-tighter leading-[1.02]"
               lines={[<>Problems we solve</>, <span key="a" className="serif-accent font-normal text-[1.1em]">for you.</span>]}
             />
           </div>
-          <div className="md:text-right text-muted font-mono text-sm uppercase tracking-wider max-w-xs">
+          <p className="md:text-right text-muted font-mono text-xs md:text-sm uppercase tracking-wider max-w-xs">
             Tap a row to see exactly how we fix it.
-          </div>
-        </motion.div>
+          </p>
+        </div>
 
-        <div className="flex flex-col border-t border-glass-border -mt-[1px]">
-          {services.map((service, index) => (
-            <ServiceRow key={service.id} service={{ ...service, icon: icons[service.id] }} index={index} />
-          ))}
+        <div className="lg:grid lg:grid-cols-12 lg:gap-10 xl:gap-14">
+          {/* Index of problems */}
+          <ol className="lg:col-span-5 border-t border-glass-border">
+            {services.map((service, i) => {
+              const isActive = i === active;
+              return (
+                <li key={service.id} className="border-b border-glass-border">
+                  <button
+                    type="button"
+                    aria-expanded={isActive}
+                    aria-controls={`service-panel-${service.id}`}
+                    onClick={() => pick(i)}
+                    onMouseEnter={() => window.matchMedia("(hover: hover) and (min-width: 1024px)").matches && pick(i)}
+                    className="group relative flex w-full items-start gap-4 py-4 md:py-5 pr-2 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/70 rounded-sm"
+                  >
+                    <span className={`font-mono text-xs pt-1.5 transition-colors duration-300 ${isActive ? "text-accent" : "text-muted"}`}>{service.id}</span>
+                    <span className="flex-1">
+                      <span
+                        className={`block text-[15px] md:text-lg font-semibold leading-snug tracking-tight transition-[color,transform] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] ${
+                          isActive ? "text-foreground lg:translate-x-2" : "text-foreground/55 group-hover:text-foreground/85"
+                        }`}
+                      >
+                        {service.title}
+                      </span>
+                      <span className={`mt-1 block font-mono text-[10px] tracking-wide transition-colors ${isActive ? "text-accent/80" : "text-muted/70"}`}>{service.label}</span>
+                    </span>
+                    <ArrowUpRight
+                      size={18}
+                      aria-hidden
+                      className={`mt-1 shrink-0 transition-all duration-500 ${isActive ? "rotate-45 text-accent" : "text-muted/50"}`}
+                    />
+                    {/* Auto-advance timer, drawn along the row's bottom edge */}
+                    {isActive && (
+                      <span aria-hidden className="absolute -bottom-px left-0 h-px w-full overflow-hidden">
+                        <span
+                          key={`${active}-${cycling}`}
+                          className="block h-full w-full origin-left bg-accent shadow-[0_0_10px_rgba(196,240,66,0.8)]"
+                          style={
+                            {
+                              transform: cycling ? undefined : "scaleX(1)",
+                              animation: cycling ? `svc-progress ${CYCLE_MS}ms linear forwards` : undefined,
+                            } as CSSProperties
+                          }
+                        />
+                      </span>
+                    )}
+                  </button>
+
+                  {/* Mobile / tablet: the answer opens inline under its row */}
+                  <AnimatePresence initial={false}>
+                    {isActive && (
+                      <motion.div
+                        id={`service-panel-${service.id}`}
+                        key="m"
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: "auto", opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        transition={{ duration: 0.45, ease: EASE }}
+                        className="rm-reset overflow-hidden lg:hidden"
+                      >
+                        <div className="pb-8 pt-2 pl-8">
+                          <Detail service={service} compact />
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </li>
+              );
+            })}
+          </ol>
+
+          {/* Desktop: the answer on a pinned stage beside the index */}
+          <div className="hidden lg:block lg:col-span-7">
+            <div className="sticky top-28">
+              <div
+                className="spotlight glass-panel travel-border relative overflow-hidden rounded-[2rem] p-10 xl:p-12 min-h-[560px]"
+                onMouseMove={(e) => {
+                  const r = e.currentTarget.getBoundingClientRect();
+                  e.currentTarget.style.setProperty("--mx", `${e.clientX - r.left}px`);
+                  e.currentTarget.style.setProperty("--my", `${e.clientY - r.top}px`);
+                }}
+              >
+                {/* Giant serif index that rolls with each change */}
+                <div aria-hidden className="pointer-events-none absolute -right-4 -top-10 h-[15rem] w-[18rem] overflow-hidden">
+                  <AnimatePresence mode="popLayout" initial={false}>
+                    <motion.span
+                      key={current.id}
+                      initial={{ y: "60%", opacity: 0, rotate: 6 }}
+                      animate={{ y: "0%", opacity: 1, rotate: 0 }}
+                      exit={{ y: "-60%", opacity: 0, rotate: -6 }}
+                      transition={{ duration: 0.7, ease: EASE }}
+                      className="rm-reset absolute right-4 top-0 font-serif italic text-[13rem] leading-none text-foreground/[0.05]"
+                    >
+                      {current.id}
+                    </motion.span>
+                  </AnimatePresence>
+                </div>
+
+                <AnimatePresence mode="wait" initial={false}>
+                  <motion.div
+                    key={current.id}
+                    id="service-stage"
+                    initial={{ opacity: 0, y: 28, filter: "blur(10px)", clipPath: "inset(0 0 100% 0)" }}
+                    animate={{ opacity: 1, y: 0, filter: "blur(0px)", clipPath: "inset(0 0 0% 0)" }}
+                    exit={{ opacity: 0, y: -18, filter: "blur(8px)" }}
+                    transition={{ duration: 0.55, ease: EASE }}
+                    className="rm-reset relative"
+                  >
+                    <Detail service={current} />
+                  </motion.div>
+                </AnimatePresence>
+
+                {/* Position dots */}
+                <div className="absolute bottom-8 right-10 flex gap-1.5" aria-hidden>
+                  {services.map((s, i) => (
+                    <span key={s.id} className={`h-1 rounded-full transition-all duration-500 ${i === active ? "w-6 bg-accent" : "w-1.5 bg-foreground/20"}`} />
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </section>

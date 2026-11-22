@@ -103,6 +103,18 @@ body::before {
   100% { transform: translateX(-50%); }
 }
 
+/* Services auto-advance timer */
+@keyframes svc-progress {
+  from { transform: scaleX(0); }
+  to { transform: scaleX(1); }
+}
+
+/* Footer wordmark: letters breathe up one after another */
+@keyframes wordmark-wave {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-0.06em); }
+}
+
 @keyframes marquee {
   0% { transform: translateX(0); }
   100% { transform: translateX(-50%); }
