@@ -1,14 +1,15 @@
 "use client";
 
-import { useEffect, useRef, useState, type MouseEvent } from "react";
-import { motion, useMotionValue, useScroll, useSpring, useTransform } from "framer-motion";
-import { ArrowDown, ArrowUpRight, Bot, ChevronDown, Phone } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import dynamic from "next/dynamic";
+import { motion, useScroll, useTransform } from "framer-motion";
+import { ArrowDown, ArrowUpRight, ChevronDown, Phone } from "lucide-react";
 import { useLoading } from "@/components/providers/LoadingProvider";
 import { services } from "@/lib/services";
 import HeroField from "./HeroField";
 
-const PROCESS_STEPS = ["Discover", "Design", "Develop", "Distribute", "Deliver"];
-const PULSE_HEIGHTS = [45, 80, 55, 95, 65, 35];
+// three.js is heavy: load the 3D mascot only in the browser, after the page is interactive
+const GogleBot = dynamic(() => import("./GogleBot"), { ssr: false });
 
 export default function Hero() {
   const { isLoading } = useLoading();
@@ -42,23 +43,6 @@ export default function Hero() {
     },
   };
 
-  // A light tilt on the studio panel, following the cursor — off for touch/reduced-motion visitors,
-  // who never fire mousemove here anyway. Motion values so the tilt doesn't trigger React renders.
-  const rotateX = useMotionValue(0);
-  const rotateY = useMotionValue(0);
-  const springX = useSpring(rotateX, { stiffness: 150, damping: 16 });
-  const springY = useSpring(rotateY, { stiffness: 150, damping: 16 });
-  const handlePanelMove = (event: MouseEvent<HTMLDivElement>) => {
-    if (reducedMotion) return;
-    const rect = event.currentTarget.getBoundingClientRect();
-    rotateY.set(((event.clientX - rect.left) / rect.width - 0.5) * 14);
-    rotateX.set(((event.clientY - rect.top) / rect.height - 0.5) * -14);
-  };
-  const resetPanel = () => {
-    rotateX.set(0);
-    rotateY.set(0);
-  };
-
   // Scroll-driven depth: three layers (background, headline, panel) each move and fade at their
   // own rate as the hero scrolls past, so leaving it reads as a cinematic exit rather than a cut —
   // the kind of scroll-storytelling agency sites use instead of a static, one-shot hero.
@@ -67,7 +51,6 @@ export default function Hero() {
   const textY = useTransform(scrollYProgress, [0, 1], [0, -90]);
   const textOpacity = useTransform(scrollYProgress, [0, 0.65], [1, 0]);
   const panelY = useTransform(scrollYProgress, [0, 1], [0, -50]);
-  const panelScale = useTransform(scrollYProgress, [0, 1], [1, 0.9]);
   const panelOpacity = useTransform(scrollYProgress, [0, 0.75], [1, 0]);
   const scrollCueOpacity = useTransform(scrollYProgress, [0, 0.12], [1, 0]);
 
@@ -180,99 +163,64 @@ export default function Hero() {
         </motion.div>
         </motion.div>
 
-        {/* Right Side: Live Studio Panel — scroll layer wraps the entrance-animation layer */}
-        <motion.div style={reducedMotion ? undefined : { y: panelY, scale: panelScale, opacity: panelOpacity }} className="lg:w-1/2 w-full">
-        <motion.div
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={shouldAnimate ? { opacity: 1, scale: 1 } : { opacity: 0, scale: 0.9 }}
-          transition={{
-            duration: reducedMotion ? 0.01 : 1,
-            delay: reducedMotion ? 0 : 0.35,
-            ease: [0.22, 1, 0.36, 1] as const,
-          }}
-          className="relative h-[350px] md:h-[460px] flex items-center justify-center w-full"
-        >
-          {/* Accent glow pooled under the panel, so it sits in light rather than floating on flat black */}
-          <div aria-hidden className="absolute w-[260px] h-[260px] md:w-[380px] md:h-[380px] rounded-full bg-accent/15 blur-[90px]" />
-          {/* Energy Rings */}
-          <div className="absolute w-[280px] h-[280px] md:w-[400px] md:h-[400px] rounded-full border border-glass-border opacity-50 shadow-[0_0_50px_rgba(196,240,66,0.05)]" />
-          <div className="absolute w-[350px] h-[350px] md:w-[500px] md:h-[500px] rounded-full border border-glass-border opacity-20" />
-
+        {/* Right Side: Gogle, the studio mascot, live in 3D. Follows the cursor, blinks, spins on click,
+            and tips back as the hero scrolls away. Loaded client-only so it never blocks first paint. */}
+        <motion.div style={reducedMotion ? undefined : { y: panelY, opacity: panelOpacity }} className="lg:w-1/2 w-full lg:-mr-12 xl:-mr-20">
           <motion.div
-            onMouseMove={handlePanelMove}
-            onMouseLeave={resetPanel}
-            style={{ rotateX: springX, rotateY: springY, transformPerspective: 900 }}
-            className="glass-panel travel-border relative z-10 w-full max-w-[340px] rounded-3xl p-6 md:p-7 mx-6 shadow-[0_40px_100px_-30px_rgba(0,0,0,0.6)]"
+            initial={{ opacity: 0 }}
+            animate={shouldAnimate ? { opacity: 1 } : { opacity: 0 }}
+            transition={{ duration: reducedMotion ? 0.01 : 0.8, delay: reducedMotion ? 0 : 0.2 }}
+            className="relative h-[400px] sm:h-[460px] md:h-[540px] lg:h-[620px] w-full"
           >
-            <div className="flex items-center justify-between mb-6">
+            {/* Light pool the robot stands in */}
+            <div aria-hidden className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] h-[300px] md:w-[460px] md:h-[460px] rounded-full bg-accent/20 blur-[110px]" />
+            <div aria-hidden className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[340px] h-[340px] md:w-[520px] md:h-[520px] rounded-full border border-glass-border opacity-40" />
+
+            <GogleBot scroll={scrollYProgress} play={shouldAnimate} reduced={reducedMotion} />
+
+            {/* HUD chips floating over the scene */}
+            <motion.div
+              initial={{ opacity: 0, y: 12 }}
+              animate={shouldAnimate ? { opacity: 1, y: 0 } : { opacity: 0, y: 12 }}
+              transition={{ duration: reducedMotion ? 0.01 : 0.7, delay: reducedMotion ? 0 : 1.2, ease: [0.22, 1, 0.36, 1] }}
+              className="pointer-events-none absolute left-2 top-6 md:left-4 md:top-10 glass-panel rounded-2xl px-4 py-3 backdrop-blur-md"
+            >
               <div className="flex items-center gap-2">
                 <span className="relative flex h-2 w-2">
                   <span className="absolute inline-flex h-full w-full rounded-full bg-accent opacity-75 motion-safe:animate-ping" />
                   <span className="relative inline-flex h-2 w-2 rounded-full bg-accent" />
                 </span>
-                <span className="font-mono text-xs text-foreground">Gogle is online</span>
+                <span className="font-mono text-[11px] text-foreground">Gogle is online</span>
               </div>
-              <Bot size={16} className="text-accent" aria-hidden />
-            </div>
-
-            <div className="grid grid-cols-2 gap-4 mb-6">
-              <div>
-                <p className="text-3xl font-bold tracking-tight">{services.length}</p>
-                <p className="text-[11px] text-muted font-mono uppercase tracking-wide">Core services</p>
-              </div>
-              <div>
-                <p className="text-3xl font-bold tracking-tight">{PROCESS_STEPS.length}</p>
-                <p className="text-[11px] text-muted font-mono uppercase tracking-wide">Step process</p>
-              </div>
-            </div>
-
-            <div className="space-y-2 mb-6">
-              {PROCESS_STEPS.map((step, index) => (
-                <div key={step} className="flex items-center gap-3">
-                  <span className="font-mono text-[10px] text-muted w-4 shrink-0">{String(index + 1).padStart(2, "0")}</span>
-                  <div className="h-1 flex-1 rounded-full bg-glass-border overflow-hidden">
-                    <motion.div
-                      className="h-full bg-accent origin-left"
-                      initial={{ scaleX: 0 }}
-                      animate={shouldAnimate ? { scaleX: 1 } : { scaleX: 0 }}
-                      transition={{ duration: reducedMotion ? 0.01 : 0.6, delay: reducedMotion ? 0 : 0.7 + index * 0.08 }}
-                    />
-                  </div>
-                  <span className="font-mono text-[10px] text-muted shrink-0">{step}</span>
-                </div>
-              ))}
-            </div>
-
-            <div className="flex items-end gap-1 h-8" aria-hidden>
-              {PULSE_HEIGHTS.map((height, index) => (
-                <motion.span
-                  key={index}
-                  className="flex-1 rounded-sm bg-accent/70"
-                  style={{ height: `${height}%` }}
-                  animate={reducedMotion ? undefined : { height: [`${height}%`, `${100 - height}%`, `${height}%`] }}
-                  transition={{ duration: 1.4 + index * 0.15, repeat: Infinity, ease: "easeInOut" }}
-                />
-              ))}
-            </div>
-            <p className="mt-2 font-mono text-[10px] text-muted uppercase tracking-wide">Always building, always listening</p>
+              <p className="mt-1 font-mono text-[10px] uppercase tracking-wide text-muted">
+                {services.length} core services <span className="text-foreground/30">/</span> 5 step process
+              </p>
+            </motion.div>
+            <motion.div
+              animate={reducedMotion ? undefined : { y: [-5, 5, -5] }}
+              transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+              className="pointer-events-none absolute hidden sm:block top-8 right-2 md:top-14 md:right-8 glass-panel px-3 py-1 font-mono text-[10px] md:text-xs text-accent rounded backdrop-blur-md"
+            >
+              const idea = build(impact);
+            </motion.div>
+            <motion.div
+              animate={reducedMotion ? undefined : { y: [5, -5, 5] }}
+              transition={{ duration: 5, repeat: Infinity, ease: "easeInOut", delay: 1 }}
+              className="pointer-events-none absolute hidden sm:block bottom-6 right-2 md:bottom-12 md:right-10 glass-panel px-3 py-1 font-mono text-[10px] md:text-xs text-accent rounded backdrop-blur-md"
+            >
+              performance.optimize();
+            </motion.div>
+            {!reducedMotion && (
+              <motion.span
+                initial={{ opacity: 0 }}
+                animate={shouldAnimate ? { opacity: 1 } : { opacity: 0 }}
+                transition={{ delay: 2.4, duration: 0.6 }}
+                className="pointer-events-none absolute bottom-6 left-4 md:bottom-12 md:left-10 font-mono text-[10px] uppercase tracking-[0.2em] text-muted"
+              >
+                ( tap or click Gogle )
+              </motion.span>
+            )}
           </motion.div>
-
-          {/* Floating Pseudo Code */}
-          <motion.div
-            animate={{ y: [-5, 5, -5] }}
-            transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-            className="absolute top-4 right-4 md:top-6 md:right-6 glass-panel px-3 py-1 font-mono text-[10px] md:text-xs text-accent rounded backdrop-blur-md"
-          >
-            const idea = build(impact);
-          </motion.div>
-          <motion.div
-            animate={{ y: [5, -5, 5] }}
-            transition={{ duration: 5, repeat: Infinity, ease: "easeInOut", delay: 1 }}
-            className="absolute bottom-4 left-4 md:bottom-6 md:left-6 glass-panel px-3 py-1 font-mono text-[10px] md:text-xs text-accent rounded backdrop-blur-md"
-          >
-            performance.optimize();
-          </motion.div>
-        </motion.div>
         </motion.div>
       </div>
 
