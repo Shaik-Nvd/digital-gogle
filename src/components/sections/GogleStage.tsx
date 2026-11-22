@@ -1,9 +1,11 @@
 "use client";
 
 import { Canvas, useFrame, useThree, type ThreeEvent } from "@react-three/fiber";
-import { ContactShadows, Environment, Float, Lightformer, RoundedBox } from "@react-three/drei";
-import type { MotionValue } from "framer-motion";
+import { Environment, Float, Lightformer, RoundedBox, Trail } from "@react-three/drei";
+import { Bloom, ChromaticAberration, EffectComposer } from "@react-three/postprocessing";
+import { BlendFunction, type ChromaticAberrationEffect } from "postprocessing";
 import { useEffect, useMemo, useRef, useState, type RefObject } from "react";
+import { useLoading } from "@/components/providers/LoadingProvider";
 import * as THREE from "three";
 
 /**
@@ -14,31 +16,38 @@ import * as THREE from "three";
  */
 
 const LIME = "#c4f042";
+/** Over-bright lime (values above 1): only these pixels cross the bloom threshold and glow. */
+const HOT = new THREE.Color(LIME).multiplyScalar(2.4);
+const easeInOutCubic = (x: number) => (x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2);
+
+/** DOM elements Gogle docks into, in scroll order. Each section renders an empty positioned div
+ *  with one of these ids; the stage reads its box every frame. */
+const SLOT_IDS = ["gogle-slot-hero", "gogle-slot-statement", "gogle-slot-process"];
 const { damp, clamp } = THREE.MathUtils;
 const easeOutBack = (x: number) => 1 + 2.2 * Math.pow(x - 1, 3) + 1.2 * Math.pow(x - 1, 2);
 const easeOutCubic = (x: number) => 1 - Math.pow(1 - x, 3);
 
 type Pointer = RefObject<{ x: number; y: number }>;
 type Shared = RefObject<{ burst: number; happy: number }>;
+type Flight = RefObject<{ arc: number; dir: number; sx: number; sy: number }>;
 
-/** Cursor position relative to the canvas centre, normalised by the viewport (so the robot
- *  still looks across at the headline when the cursor is over the text column). */
-function usePointer(el: RefObject<HTMLDivElement | null>) {
-  const p = useRef({ x: -0.4, y: 0.1 });
+/** Raw cursor position in client pixels; the robot works out its own look direction from it. */
+function usePointer() {
+  const p = useRef({ x: 0, y: 0 });
   useEffect(() => {
+    p.current.x = window.innerWidth * 0.25;
+    p.current.y = window.innerHeight * 0.45;
     const on = (e: PointerEvent) => {
-      const r = el.current?.getBoundingClientRect();
-      if (!r) return;
-      p.current.x = clamp((e.clientX - (r.left + r.width / 2)) / (window.innerWidth / 2), -1.2, 1.2);
-      p.current.y = clamp(-(e.clientY - (r.top + r.height / 2)) / (window.innerHeight / 2), -1.2, 1.2);
+      p.current.x = e.clientX;
+      p.current.y = e.clientY;
     };
     window.addEventListener("pointermove", on, { passive: true });
     return () => window.removeEventListener("pointermove", on);
-  }, [el]);
+  }, []);
   return p;
 }
 
-function Robot({ pointer, sharedRef, scroll, play, reduced }: { pointer: Pointer; sharedRef: Shared; scroll?: MotionValue<number>; play: boolean; reduced: boolean }) {
+function Robot({ pointer, sharedRef, flightRef, play, reduced }: { pointer: Pointer; sharedRef: Shared; flightRef: Flight; play: boolean; reduced: boolean }) {
   const root = useRef<THREE.Group>(null!);
   const head = useRef<THREE.Group>(null!);
   const body = useRef<THREE.Group>(null!);
@@ -60,15 +69,16 @@ function Robot({ pointer, sharedRef, scroll, play, reduced }: { pointer: Pointer
     const t = state.clock.elapsedTime;
     const st = s.current;
     const sh = sharedRef.current!;
-    const px = pointer.current!.x;
-    const py = pointer.current!.y;
-    const sc = scroll?.get() ?? 0;
+    const fl = flightRef.current!;
+    // Look direction: cursor relative to where the robot currently is on screen
+    const px = clamp((pointer.current!.x - fl.sx) / (state.size.width / 2), -1.2, 1.2);
+    const py = clamp(-(pointer.current!.y - fl.sy) / (state.size.height / 2), -1.2, 1.2);
 
     // Entrance: drop in from above with an overshoot once the preloader lifts
     if (play && st.intro < 1) st.intro = Math.min(1, st.intro + dt / 1.3);
     const k = easeOutBack(st.intro);
-    root.current.position.y = (1 - k) * 5 + (reduced ? 0 : Math.sin(t * 1.4) * 0.07) + sc * 1.2;
-    root.current.scale.setScalar(Math.max(0.001, easeOutCubic(st.intro)) * (1 - sc * 0.25));
+    root.current.position.y = (1 - k) * 5 + (reduced ? 0 : Math.sin(t * 1.4) * 0.07);
+    root.current.scale.setScalar(Math.max(0.001, easeOutCubic(st.intro)));
 
     // Click: one full spin plus a happy squint that fades out
     st.spin = damp(st.spin, st.spinTarget, 4, dt);
@@ -76,13 +86,14 @@ function Robot({ pointer, sharedRef, scroll, play, reduced }: { pointer: Pointer
     sh.burst = damp(sh.burst, 0, 2.2, dt);
 
     // Look at the cursor: head leads, body follows at half strength; scrolling tips it back
-    const lookY = reduced ? -0.25 : px * 0.65;
+    // mid-flight it looks where it is going
+    const lookY = reduced ? -0.25 : px * 0.65 * (1 - fl.arc) + fl.dir * fl.arc * 0.9;
     const lookX = reduced ? 0.05 : -py * 0.35;
     head.current.rotation.y = damp(head.current.rotation.y, lookY, 5, dt);
-    head.current.rotation.x = damp(head.current.rotation.x, lookX + sc * 0.5, 5, dt);
+    head.current.rotation.x = damp(head.current.rotation.x, lookX, 5, dt);
     head.current.rotation.z = damp(head.current.rotation.z, reduced ? 0 : -px * 0.08 + Math.sin(t * 0.7) * 0.03, 3, dt);
     body.current.rotation.y = damp(body.current.rotation.y, lookY * 0.4, 3, dt);
-    root.current.rotation.y = st.spin + (1 - k) * -1.2 + sc * 0.8;
+    root.current.rotation.y = st.spin + (1 - k) * -1.2;
 
     // Pupils drift inside the lenses
     const ox = clamp(px, -1, 1) * 0.09;
@@ -96,12 +107,12 @@ function Robot({ pointer, sharedRef, scroll, play, reduced }: { pointer: Pointer
       st.nextBlink = t + (Math.random() < 0.2 ? 0.25 : 2.5 + Math.random() * 3);
     }
     st.blink = damp(st.blink, 1, 18, dt);
-    eyes.current.scale.y = Math.max(0.08, st.blink * (1 - 0.65 * sh.happy));
+    eyes.current.scale.y = Math.max(0.08, st.blink * (1 - 0.65 * Math.max(sh.happy, fl.arc)));
 
     // Antenna wobble + pulsing tip
     antenna.current.rotation.z = Math.sin(t * 2.2) * 0.12 + (st.spinTarget - st.spin) * 0.08;
     const pulse = 0.55 + 0.45 * Math.sin(t * 3);
-    tip.current.color.set(LIME).multiplyScalar(0.7 + pulse * 0.6 + sh.happy);
+    tip.current.color.set(LIME).multiplyScalar(1.4 + pulse * 1.6 + sh.happy * 3 + fl.arc * 3);
     visorLight.current.intensity = 1.4 + pulse * 0.6 + sh.happy * 4;
   });
 
@@ -167,7 +178,7 @@ function Robot({ pointer, sharedRef, scroll, play, reduced }: { pointer: Pointer
               <group ref={i === 0 ? pupilL : pupilR}>
                 <mesh position={[0, 0, 0.01]}>
                   <circleGeometry args={[0.15, 40]} />
-                  <meshBasicMaterial color={LIME} toneMapped={false} />
+                  <meshBasicMaterial color={HOT} toneMapped={false} />
                 </mesh>
                 <mesh position={[0.05, 0.05, 0.02]}>
                   <circleGeometry args={[0.045, 24]} />
@@ -192,7 +203,7 @@ function Robot({ pointer, sharedRef, scroll, play, reduced }: { pointer: Pointer
             </mesh>
             <mesh position={[0, side * -0.09, 0]}>
               <torusGeometry args={[0.18, 0.04, 12, 32]} />
-              <meshBasicMaterial color={LIME} toneMapped={false} />
+              <meshBasicMaterial color={HOT} toneMapped={false} />
             </mesh>
           </group>
         ))}
@@ -205,7 +216,7 @@ function Robot({ pointer, sharedRef, scroll, play, reduced }: { pointer: Pointer
           </mesh>
           <mesh position={[0, 0.66, 0]}>
             <sphereGeometry args={[0.13, 24, 24]} />
-            <meshBasicMaterial ref={tip} color={LIME} toneMapped={false} />
+            <meshBasicMaterial ref={tip} color={HOT} toneMapped={false} />
           </mesh>
         </group>
       </group>
@@ -225,7 +236,7 @@ function ChestBars() {
       {[0, 1, 2, 3, 4].map((i) => (
         <mesh key={i} position={[i * 0.15, 0.14, 0]}>
           <boxGeometry args={[0.08, 0.28, 0.02]} />
-          <meshBasicMaterial color={LIME} toneMapped={false} />
+          <meshBasicMaterial color={HOT} toneMapped={false} />
         </mesh>
       ))}
     </group>
@@ -243,8 +254,10 @@ function Orbiting({ base, sharedRef, pointer, depth = 1, children, delay = 0, pl
     if (startAt.current !== null && state.clock.elapsedTime > startAt.current) intro.current = Math.min(1, intro.current + dt / 0.9);
     const burst = sharedRef.current!.burst;
     const push = 1 + burst * 0.45;
-    const px = reduced ? 0 : pointer.current!.x * 0.25 * depth;
-    const py = reduced ? 0 : pointer.current!.y * 0.18 * depth;
+    const nx = (pointer.current!.x / state.size.width) * 2 - 1;
+    const ny = 1 - (pointer.current!.y / state.size.height) * 2;
+    const px = reduced ? 0 : nx * 0.25 * depth;
+    const py = reduced ? 0 : ny * 0.18 * depth;
     g.current.position.set(base[0] * push + px, base[1] * push + py, base[2]);
     g.current.scale.setScalar(Math.max(0.001, easeOutBack(intro.current)));
     g.current.rotation.z = burst * Math.sin(base[0] * 3) * 1.2;
@@ -296,7 +309,7 @@ function BrowserProp() {
         </mesh>
       ))}
       <RoundedBox args={[0.5, 0.18, 0.05]} radius={0.06} smoothness={3} position={[-0.47, -0.42, 0.08]}>
-        <meshBasicMaterial color={LIME} toneMapped={false} />
+        <meshBasicMaterial color={HOT} toneMapped={false} />
       </RoundedBox>
     </group>
   );
@@ -315,7 +328,7 @@ function ChatProp() {
       {[-0.27, 0, 0.27].map((x) => (
         <mesh key={x} position={[x, 0, 0.16]}>
           <sphereGeometry args={[0.07, 16, 16]} />
-          <meshBasicMaterial color={LIME} toneMapped={false} />
+          <meshBasicMaterial color={HOT} toneMapped={false} />
         </mesh>
       ))}
     </group>
@@ -357,7 +370,7 @@ function Sparkle({ position, scale = 0.12 }: { position: [number, number, number
   return (
     <mesh ref={m} position={position}>
       <octahedronGeometry args={[1, 0]} />
-      <meshBasicMaterial color={LIME} toneMapped={false} />
+      <meshBasicMaterial color={HOT} toneMapped={false} />
     </mesh>
   );
 }
@@ -372,11 +385,11 @@ function OrbitRing({ reduced }: { reduced: boolean }) {
       <group ref={r}>
         <mesh>
           <torusGeometry args={[2.35, 0.012, 8, 160]} />
-          <meshBasicMaterial color={LIME} transparent opacity={0.55} toneMapped={false} />
+          <meshBasicMaterial color={HOT} transparent opacity={0.55} toneMapped={false} />
         </mesh>
         <mesh position={[2.35, 0, 0]}>
           <sphereGeometry args={[0.07, 16, 16]} />
-          <meshBasicMaterial color={LIME} toneMapped={false} />
+          <meshBasicMaterial color={HOT} toneMapped={false} />
         </mesh>
       </group>
     </group>
@@ -387,22 +400,105 @@ function F({ children, speed = 1.6, reduced }: { children: React.ReactNode; spee
   return reduced ? <>{children}</> : <Float speed={speed} rotationIntensity={0.6} floatIntensity={0.9}>{children}</Float>;
 }
 
-/** Fit the scene to the canvas: shrink on narrow (portrait) canvases so the props stay in frame. */
-function Rig({ children }: { children: React.ReactNode }) {
-  const { size } = useThree();
-  const aspect = size.width / size.height;
-  const fit = clamp(aspect / 1.3, 0.6, 1);
-  return <group scale={fit}>{children}</group>;
+type Placement = { x: number; y: number; s: number };
+
+/** Where a slot sits in world space (z = 0 plane) and how big the robot should be inside it. */
+function place(r: DOMRect, vw: number, vh: number, halfW: number, halfH: number, clampY: boolean): Placement {
+  const cx = r.left + r.width / 2;
+  let cy = r.top + r.height / 2;
+  if (clampY) cy = clamp(cy, vh * 0.38, vh * 0.62);
+  const fit = clamp(r.width / r.height / 1.3, 0.6, 1);
+  return { x: (cx / vw) * 2 * halfW - halfW, y: halfH - (cy / vh) * 2 * halfH, s: (r.height / vh) * fit * 1.12 };
 }
 
-function Scene({ pointer, scroll, play, reduced }: { pointer: Pointer; scroll?: MotionValue<number>; play: boolean; reduced: boolean }) {
+function Scene({ play, reduced }: { play: boolean; reduced: boolean }) {
+  const { camera } = useThree();
+  const pointer = usePointer();
   const sharedRef = useRef({ burst: 0, happy: 0 });
+  const flightRef = useRef({ arc: 0, dir: 1, sx: 0, sy: 0 });
+  const flyer = useRef<THREE.Group>(null!);
+  const propsG = useRef<THREE.Group>(null!);
+  const caRef = useRef<ChromaticAberrationEffect>(null);
+  const last = useRef(new THREE.Vector3());
+  const speed = useRef(0);
+  const caOffset = useMemo(() => new THREE.Vector2(0, 0), []);
+
+  useFrame((state, dt) => {
+    const vw = state.size.width;
+    const vh = state.size.height;
+    const halfH = camera.position.z * Math.tan(THREE.MathUtils.degToRad((camera as THREE.PerspectiveCamera).fov / 2));
+    const halfW = (halfH * vw) / vh;
+
+    // Slots that are actually laid out (a slot hidden on mobile has no box and is skipped)
+    const rects: DOMRect[] = [];
+    for (const id of reduced ? SLOT_IDS.slice(0, 1) : SLOT_IDS) {
+      const el = document.getElementById(id);
+      const r = el?.getBoundingClientRect();
+      if (r && r.width > 0 && r.height > 0) rects.push(r);
+    }
+    if (!rects.length) return;
+
+    // Flight progress: a hop to the next slot starts as its box enters the bottom of the screen and
+    // lands when it reaches the upper third. While parked, the robot simply rides along with its slot.
+    let i0 = 0;
+    let i1 = 0;
+    let t = 0;
+    for (let i = 1; i < rects.length; i++) {
+      const p = clamp((vh * 0.95 - rects[i].top) / (vh * 0.6), 0, 1);
+      if (p > 0) {
+        i0 = i - 1;
+        i1 = i;
+        t = p;
+      }
+    }
+    const A = place(rects[i0], vw, vh, halfW, halfH, t > 0);
+    const B = place(rects[i1], vw, vh, halfW, halfH, false);
+    const e = easeInOutCubic(t);
+    const arc = Math.sin(Math.PI * t);
+    const dir = Math.sign(B.x - A.x) || 1;
+
+    const g = flyer.current;
+    g.position.set(
+      THREE.MathUtils.lerp(A.x, B.x, e),
+      THREE.MathUtils.lerp(A.y, B.y, e) + arc * 0.5,
+      arc * 1.4, // swoops toward the camera mid-flight
+    );
+    g.scale.setScalar(THREE.MathUtils.lerp(A.s, B.s, e) * (1 - arc * 0.22));
+    g.rotation.set(-arc * 0.25, arc * dir * 0.5, -dir * e * Math.PI * 2 * (t < 1 ? 1 : 0));
+
+    const fl = flightRef.current;
+    fl.arc = arc;
+    fl.dir = dir;
+    fl.sx = ((g.position.x + halfW) / (2 * halfW)) * vw;
+    fl.sy = ((halfH - g.position.y) / (2 * halfH)) * vh;
+
+    // Props live in the hero: they ride with the hero slot and scatter away on the first hop
+    const hero = place(rects[0], vw, vh, halfW, halfH, false);
+    const leaving = i1 === 0 ? 0 : i1 === 1 ? e : 1;
+    propsG.current.position.set(hero.x, hero.y, leaving * 1.5);
+    propsG.current.scale.setScalar(Math.max(0.0001, hero.s * (1 + leaving * 0.6)));
+    propsG.current.visible = leaving < 0.98;
+    propsG.current.children.forEach((c) => {
+      c.visible = leaving < 0.98;
+    });
+
+    // Speed-driven colour split: the faster Gogle moves, the more the image tears
+    const moved = last.current.distanceTo(g.position) / Math.max(dt, 1 / 120);
+    last.current.copy(g.position);
+    speed.current = damp(speed.current, Math.min(moved, 20), 6, dt);
+    if (caRef.current) {
+      const k = reduced ? 0 : Math.min(0.006, speed.current * 0.0004);
+      caOffset.set(k, k * 0.6);
+      caRef.current.offset = caOffset;
+    }
+  });
+
   const common = { sharedRef, pointer, play, reduced };
 
   return (
     <>
       <ambientLight intensity={0.5} />
-      <directionalLight position={[4, 6, 5]} intensity={2.2} castShadow={false} />
+      <directionalLight position={[4, 6, 5]} intensity={2.2} />
       <directionalLight position={[-5, 2, -3]} intensity={1.2} color={LIME} />
       <Environment resolution={256}>
         <Lightformer form="rect" intensity={3} position={[0, 4, 3]} scale={[8, 2, 1]} />
@@ -411,11 +507,9 @@ function Scene({ pointer, scroll, play, reduced }: { pointer: Pointer; scroll?: 
         <Lightformer form="rect" intensity={0.6} position={[0, -4, 1]} scale={[8, 1, 1]} />
       </Environment>
 
-      <Rig>
+      {/* Props stay behind in the hero */}
+      <group ref={propsG}>
         <group position={[0, 0.2, 0]} scale={1.12}>
-          <OrbitRing reduced={reduced} />
-          <Robot {...common} scroll={scroll} />
-
           <Orbiting {...common} base={[2.2, 1.2, -0.4]} depth={1.2} delay={0.35}>
             <F reduced={reduced} speed={1.4}><BrowserProp /></F>
           </Orbiting>
@@ -428,43 +522,106 @@ function Scene({ pointer, scroll, play, reduced }: { pointer: Pointer; scroll?: 
           <Orbiting {...common} base={[2.15, -1.05, 0.5]} depth={1.5} delay={0.8}>
             <F reduced={reduced} speed={1.5}><ChartProp /></F>
           </Orbiting>
-
           <Sparkle position={[-1.2, 1.9, -0.5]} />
           <Sparkle position={[1.45, 2.0, 0.3]} scale={0.09} />
           <Sparkle position={[-1.6, -1.95, 0.6]} scale={0.08} />
           <Sparkle position={[1.3, -2.1, -0.3]} scale={0.1} />
         </group>
+      </group>
 
-        <ContactShadows position={[0, -2.5, 0]} opacity={0.45} scale={9} blur={2.6} far={3} color="#000000" />
-      </Rig>
+      {/* Gogle himself: docks into each slot and flies between them */}
+      <group ref={flyer}>
+        <group position={[0, 0.2, 0]} scale={1.12}>
+          <OrbitRing reduced={reduced} />
+          <Robot {...common} flightRef={flightRef} />
+          {/* Jet trails from the ear lights — they streak whenever Gogle moves */}
+          {!reduced &&
+            [-1.35, 1.35].map((x) => (
+              <Trail key={x} width={1.4} length={5} color={HOT} attenuation={(w) => w * w} decay={1.4}>
+                <mesh position={[x, 0.3, 0]}>
+                  <sphereGeometry args={[0.001, 4, 4]} />
+                  <meshBasicMaterial transparent opacity={0} />
+                </mesh>
+              </Trail>
+            ))}
+        </group>
+      </group>
+
+      {!reduced && (
+        <EffectComposer multisampling={0}>
+          <Bloom mipmapBlur intensity={1.15} luminanceThreshold={1} luminanceSmoothing={0.2} radius={0.75} />
+          <ChromaticAberration ref={caRef} blendFunction={BlendFunction.NORMAL} offset={caOffset} radialModulation={false} modulationOffset={0} />
+        </EffectComposer>
+      )}
     </>
   );
 }
 
-export default function GogleBot({ scroll, play, reduced }: { scroll?: MotionValue<number>; play: boolean; reduced: boolean }) {
-  const wrap = useRef<HTMLDivElement>(null);
-  const pointer = usePointer(wrap);
-  const [visible, setVisible] = useState(true);
-
-  // Stop rendering entirely once the hero is scrolled out of view
+/** Re-render on scroll/resize when the frame loop is idle (reduced motion), so the robot
+ *  still tracks its slot without running a continuous animation. */
+function DemandOnScroll() {
+  const invalidate = useThree((s) => s.invalidate);
   useEffect(() => {
-    const el = wrap.current;
-    if (!el) return;
-    const io = new IntersectionObserver(([e]) => setVisible(e.isIntersecting), { rootMargin: "100px" });
-    io.observe(el);
-    return () => io.disconnect();
+    const on = () => invalidate();
+    window.addEventListener("scroll", on, { passive: true });
+    window.addEventListener("resize", on);
+    return () => {
+      window.removeEventListener("scroll", on);
+      window.removeEventListener("resize", on);
+    };
+  }, [invalidate]);
+  return null;
+}
+
+/**
+ * Full-screen, click-through WebGL layer that sits above the page sections. Events are read from
+ * the document (eventSource), so the page underneath stays fully interactive while Gogle can still
+ * be clicked. Rendering stops once the last slot has scrolled away.
+ */
+export default function GogleStage() {
+  const { isLoading } = useLoading();
+  const [reduced, setReduced] = useState(false);
+  const [active, setActive] = useState(true);
+
+  useEffect(() => {
+    const mql = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const sync = () => setReduced(mql.matches);
+    sync();
+    mql.addEventListener("change", sync);
+    return () => mql.removeEventListener("change", sync);
+  }, []);
+
+  useEffect(() => {
+    const check = () => {
+      const lastSlot = [...SLOT_IDS].reverse().map((id) => document.getElementById(id)).find((el) => el && el.getBoundingClientRect().height > 0);
+      setActive(!lastSlot || lastSlot.getBoundingClientRect().bottom > -window.innerHeight * 0.3);
+    };
+    check();
+    window.addEventListener("scroll", check, { passive: true });
+    window.addEventListener("resize", check);
+    return () => {
+      window.removeEventListener("scroll", check);
+      window.removeEventListener("resize", check);
+    };
   }, []);
 
   return (
-    <div ref={wrap} className="absolute inset-0" role="img" aria-label="Gogle, the Digital Gogle Studio robot, looking around">
+    <div
+      aria-hidden
+      className="pointer-events-none fixed inset-0 z-30 transition-opacity duration-500"
+      style={{ opacity: active ? 1 : 0 }}
+    >
       <Canvas
-        dpr={[1, 1.75]}
-        camera={{ position: [0, 0.2, 8.6], fov: 36 }}
-        gl={{ antialias: true, alpha: true, powerPreference: "high-performance" }}
-        frameloop={visible && !reduced ? "always" : "demand"}
+        dpr={[1, 1.6]}
+        camera={{ position: [0, 0, 10], fov: 36 }}
+        gl={{ antialias: false, alpha: true, powerPreference: "high-performance" }}
+        eventSource={document.body}
+        eventPrefix="client"
+        frameloop={!active ? "never" : reduced ? "demand" : "always"}
         fallback={null}
       >
-        <Scene pointer={pointer} scroll={scroll} play={play} reduced={reduced} />
+        {reduced && <DemandOnScroll />}
+        <Scene play={!isLoading} reduced={reduced} />
       </Canvas>
     </div>
   );

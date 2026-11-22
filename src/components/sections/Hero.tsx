@@ -1,15 +1,12 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import dynamic from "next/dynamic";
 import { motion, useScroll, useTransform } from "framer-motion";
 import { ArrowDown, ArrowUpRight, ChevronDown, Phone } from "lucide-react";
 import { useLoading } from "@/components/providers/LoadingProvider";
 import { services } from "@/lib/services";
 import HeroField from "./HeroField";
 
-// three.js is heavy: load the 3D mascot only in the browser, after the page is interactive
-const GogleBot = dynamic(() => import("./GogleBot"), { ssr: false });
 
 export default function Hero() {
   const { isLoading } = useLoading();
@@ -163,8 +160,8 @@ export default function Hero() {
         </motion.div>
         </motion.div>
 
-        {/* Right Side: Gogle, the studio mascot, live in 3D. Follows the cursor, blinks, spins on click,
-            and tips back as the hero scrolls away. Loaded client-only so it never blocks first paint. */}
+        {/* Right Side: Gogle's first dock. The 3D robot itself lives on the fixed GogleStage layer, which
+            follows this box and then flies him on through the page as you scroll. */}
         <motion.div style={reducedMotion ? undefined : { y: panelY, opacity: panelOpacity }} className="lg:w-1/2 w-full lg:-mr-12 xl:-mr-20">
           <motion.div
             initial={{ opacity: 0 }}
@@ -176,7 +173,8 @@ export default function Hero() {
             <div aria-hidden className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] h-[300px] md:w-[460px] md:h-[460px] rounded-full bg-accent/20 blur-[110px]" />
             <div aria-hidden className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[340px] h-[340px] md:w-[520px] md:h-[520px] rounded-full border border-glass-border opacity-40" />
 
-            <GogleBot scroll={scrollYProgress} play={shouldAnimate} reduced={reducedMotion} />
+            {/* Docking slot: the page-wide 3D stage (GogleStage) draws Gogle inside this box */}
+            <div id="gogle-slot-hero" aria-hidden className="absolute inset-0" />
 
             {/* HUD chips floating over the scene */}
             <motion.div

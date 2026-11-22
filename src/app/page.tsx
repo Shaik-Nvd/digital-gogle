@@ -5,6 +5,8 @@ import Process from "@/components/sections/Process";
 import Testimonials from "@/components/sections/Testimonials";
 import Contact from "@/components/sections/Contact";
 import Marquee from "@/components/ui/Marquee";
+import Statement from "@/components/sections/Statement";
+import GogleStageMount from "@/components/sections/GogleStageMount";
 
 export default function Home() {
   const marqueeItems = [
@@ -32,12 +34,15 @@ export default function Home() {
     <>
       <Hero />
       <Marquee items={marqueeItems} variant="display" />
+      <Statement />
       <Process />
       <WorkGrid />
       <Services />
       <Testimonials />
       <Marquee items={marqueeItems2} reverse />
       <Contact />
+      {/* Page-wide 3D layer: Gogle docks in the hero, statement and process slots */}
+      <GogleStageMount />
     </>
   );
 }
